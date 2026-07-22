@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blank HTML Template</title>
+    <!-- Link your external CSS file here -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <H1>Enter Password</H1>
+    <script>
+
+        window.customAlert = function (msg) {
+            let canvas = document.getElementById('alertCanvas');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'alertCanvas';
+                canvas.style.position = 'fixed';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100vw';
+                canvas.style.height = '100vh';
+                canvas.style.zIndex = '9999';
+                document.body.appendChild(canvas);
+
+                canvas.addEventListener('click', function (e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const x = (e.clientX - rect.left) * scaleX;
+                    const y = (e.clientY - rect.top) * scaleY;
+
+                    const boxW = Math.min(400, canvas.width * 0.8);
+                    const boxH = 150;
+                    const by = (canvas.height - boxH) / 2;
+
+                    if (x >= canvas.width / 2 - 40 && x <= canvas.width / 2 + 40 &&
+                        y >= by + boxH - 40 && y <= by + boxH - 10) {
+                        canvas.style.display = 'none';
+                    }
+                });
+            }
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            canvas.style.display = 'block';
+
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const boxW = Math.min(400, width * 0.8);
+            const boxH = 150;
+            const bx = (width - boxW) / 2;
+            const by = (height - boxH) / 2;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(bx, by, boxW, boxH, 10);
+            else ctx.rect(bx, by, boxW, boxH);
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#000';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+
+            const words = msg.split(' ');
+            let line = '';
+            let ly = by + 40;
+            for (let i = 0; i < words.length; i++) {
+                let testLine = line + words[i] + ' ';
+                if (ctx.measureText(testLine).width > boxW - 20 && i > 0) {
+                    ctx.fillText(line, width / 2, ly);
+                    line = words[i] + ' ';
+                    ly += 24;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, width / 2, ly);
+
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(width / 2 - 40, by + boxH - 40, 80, 30, 5);
+            else ctx.rect(width / 2 - 40, by + boxH - 40, 80, 30);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('Close', width / 2, by + boxH - 20);
+        };
+
+        let password = prompt("Please enter your password:");
+
+        if (password === "Bytefusion", "ArchType", "ArcmonError") {
+            customAlert("Access Granted!");
+            window.location.href = "Home.html";
+        } else {
+            customAlert("Access Denied!");
+        }
+
+    </script>
+</body>
+
+</html>

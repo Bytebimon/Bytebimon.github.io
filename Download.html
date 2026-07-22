@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Link external CSS file here -->
+    <link rel="stylesheet" href="style.css">
+    <nav>
+        <a href="Game.html">Game</a> |
+        <a href="about.html">About Me</a> |
+        <a href="contact.html">Contact</a> |
+        <a href="Home.html">Home</a> |
+        <a href="Download.html">Download</a>
+    </nav>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #dbeafe, #fdf2f8);
+        }
+
+        nav {
+            background: linear-gradient(135deg, #dbeafe, #fdf2f8);
+        }
+    </style>
+
+    <div class="action-buttons">
+        <button id="DownloadMacOs" onclick="DownloadMacOs()">Download for Mac Os </button>
+        <button id="DownloadWindows" onclick="DownloadWindows()">Download for Windows</button>
+    </div>
+</head>
+
+<script>
+    function DownloadMacOs() {
+        window.location.href = "Downloads/ArcmonError-V1.0.0.dmg";
+    }
+    function DownloadWindows() {
+        window.location.href = "Downloads/Bytebimon.exe";
+    }
+</script>
+
+<body>
+
+
+</body>
+
+</html>
