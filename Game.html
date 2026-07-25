@@ -5,8 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bytebimon</title>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7329195604411751"
-     crossorigin="anonymous"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -87,6 +85,38 @@
             cursor: pointer;
         }
 
+        @keyframes shakeStage {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 3px); }
+            40% { transform: translate(5px, -4px); }
+            60% { transform: translate(-4px, -2px); }
+            80% { transform: translate(3px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .game-stage.shake {
+            animation: shakeStage 0.35s ease-in-out;
+        }
+
+        @keyframes popInKeyframes {
+            0% { transform: scale(0.4); opacity: 0; }
+            60% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pop-in {
+            animation: popInKeyframes 0.4s ease-out;
+        }
+
+        @keyframes buttonAppear {
+            0% { transform: translateY(6px) scale(0.9); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .action-buttons button {
+            animation: buttonAppear 0.25s ease-out;
+        }
+
         .monster-placeholder {
             display: none !important;
         }
@@ -114,10 +144,10 @@
         }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <nav>
     <a href="Game.html">Game</a> |
+    <a href="RaidHost.html">Raids</a> |
     <a href="about.html">About Me</a> |
     <a href="contact.html">Contact</a> |
     <a href="Home.html">Home</a> |
@@ -132,12 +162,13 @@
                 <button id="MenuButton" onclick="menu()">Menu</button>
                 <button id="HostButton" onclick="hostMatch()" style="display: none;">Host Game</button>
                 <button id="JoinButton" onclick="joinMatch()" style="display: none;">Join Game</button>
+                <button id="RaidsButton" onclick="goToRaids()" style="display: none;">Raids (co-op)</button>
                 <button id="SaveButton" onclick="save()">Save</button>
                 <button id="feedButton" onclick="FeedButton()">Feed</button>
                 <button id="sleepButton" onclick="SleepButton()">Sleep</button>
                 <button id="trainButton" onclick="TrainButton()">Train</button>
                 <button id="battleButton" onclick="battle()">Battle</button>
-                <button id="StartButton" onclick="StartGame()">Start Game</button>
+                <button id="StartButton" onclick="StartGame()" style="display: inline-block;">Start Game</button>
                 <button id="onlineBattleButton" onclick="onlineBattle()" style="display: none;">Online Battle</button>
                 <button id="localBattleButton" onclick="localBattle()" style="display: none;">Local Battle</button>
                 <button id="settingsButton" onclick="settings()" style="display: none;">Settings</button>
@@ -190,7 +221,6 @@
         </div>
 
         <script>
-
             window.customAlert = function (msg) {
                 return new Promise(resolve => {
                     document.getElementById('customDialogOverlay').style.display = 'flex';
@@ -253,15 +283,61 @@
             let isHost = false;
             let isOnlineBattle = false;
             let EvoCheck = 0;
+            let effort = 0;
 
             let gamestate = "TitleScreen";
             let inBattle = false;
             let currentVersion;
             const delay = ms => new Promise(res => setTimeout(res, ms));
             let animationState = { type: 'idle', startTime: performance.now(), duration: 700, actor: 'player' };
+            let damagePopups = [];
+            let shakeUntil = 0;
+            let shakeMagnitude = 0;
+
+            // Bar dimensions and positions
+            let barX = 100;
+            let barY = 320;
+            let barWidth = 300;
+            let barHeight = 25;
+
+            // Sweet spot bounds (x-offset and width)
+            let targetX = 225;
+            let targetWidth = 50;
+
+            // Indicator position and physics
+            let needleX = barX;
+            let needleSpeed = 5;
+            let movingRight = true;
+
+            // Game state variables
+            let timingState = "PLAYING"; // "PLAYING", "SUCCESS", or "MISS"
+            let scoreText = "";
 
             function triggerAnimation(type, duration = 600, actor = 'player') {
                 animationState = { type, startTime: performance.now(), duration, actor };
+            }
+
+            function spawnDamagePopup(amount, side) {
+                damagePopups.push({ amount, side, startTime: performance.now() });
+            }
+
+            function triggerShake(duration = 300, magnitude = 6) {
+                shakeUntil = performance.now() + duration;
+                shakeMagnitude = magnitude;
+                const stage = document.querySelector('.game-stage');
+                if (stage) {
+                    stage.classList.remove('shake');
+                    void stage.offsetWidth;
+                    stage.classList.add('shake');
+                    setTimeout(() => stage.classList.remove('shake'), duration);
+                }
+            }
+
+            function popIn(el) {
+                if (!el) return;
+                el.classList.remove('pop-in');
+                void el.offsetWidth;
+                el.classList.add('pop-in');
             }
 
             function animateFrame(now) {
@@ -486,7 +562,7 @@
                 gamestate = "idle";
                 updateGameState();
                 winImg.style.display = "none";
-                losImg.style.display = "none";
+                LosImg.style.display = "none";
             }
 
             function updateGameState() {
@@ -515,13 +591,12 @@
                         document.getElementById('StartButton').style.display = 'none';
                         document.getElementById('SaveButton').style.display = 'inline-block';
                         winImg.style.display = "none";
-                        LosImg.style.display = "none"
+                        LosImg.style.display = "none";
                         showMonster();
                         if (!timerInterval) startTimer();
                         break;
 
                     case "menu":
-                        // Controlled via the menu() interface toggles
                         break;
 
                     case "battle":
@@ -550,7 +625,8 @@
 
                 const hiddenButtons = [
                     'MenuButton', 'feedButton', 'sleepButton', 'trainButton', 'battleButton',
-                    'onlineBattleButton', 'localBattleButton', 'settingsButton', 'volumeButton',
+                    'onlineBattleButton', 'localBattleButton', 'HostButton', 'JoinButton', 'RaidsButton',
+                    'settingsButton', 'volumeButton',
                     'updateButton', 'AttackButton', 'NextButton', 'TrainDefenseButton', 'TrainAttackButton', 'restartButton'
                 ];
                 hiddenButtons.forEach((id) => {
@@ -709,6 +785,70 @@
                 return { minX, minY, maxX, maxY };
             }
 
+            function drawTimingMeter() {
+                if (!inBattle || turn !== 'player') return;
+
+                // Move Needle
+                if (timingState === "PLAYING") {
+                    if (movingRight) {
+                        needleX += needleSpeed;
+                        if (needleX >= barX + barWidth) movingRight = false;
+                    } else {
+                        needleX -= needleSpeed;
+                        if (needleX <= barX) movingRight = true;
+                    }
+                }
+
+                // Meter Background Frame
+                ctx.fillStyle = "#333333";
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                ctx.strokeStyle = "#FFFFFF";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+                // Sweet Spot Zone
+                ctx.fillStyle = "rgba(76, 175, 80, 0.8)";
+                ctx.fillRect(targetX, barY, targetWidth, barHeight);
+
+                // Indicator Needle
+                ctx.strokeStyle = "#FFD700";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(needleX, barY - 4);
+                ctx.lineTo(needleX, barY + barHeight + 4);
+                ctx.stroke();
+
+                // Instructions or Feedback text
+                ctx.fillStyle = "#1F2937";
+                ctx.font = "bold 12px Arial";
+                ctx.textAlign = "center";
+                if (scoreText) {
+                    ctx.fillText(scoreText, barX + barWidth / 2, barY - 8);
+                } else {
+                    ctx.fillText("Click or Press Space for Critical Hit!", barX + barWidth / 2, barY - 8);
+                }
+            }
+
+            function checkTiming() {
+                if (timingState === "PLAYING") {
+                    if (needleX >= targetX && needleX <= targetX + targetWidth) {
+                        timingState = "SUCCESS";
+                        scoreText = "CRITICAL HIT!";
+                        effort = 0; // Bonus/Normal damage
+                    } else {
+                        timingState = "MISS";
+                        scoreText = "MISSED!";
+                        effort = 9; // Reduction penalty
+                    }
+                } else {
+                    // Reset Timing Meter
+                    timingState = "PLAYING";
+                    needleX = barX;
+                    movingRight = true;
+                    scoreText = "";
+                }
+            }
+
             function drawGameScene(timestamp = performance.now()) {
                 const width = canvas.width / (window.devicePixelRatio || 1) || 500;
                 const height = canvas.height / (window.devicePixelRatio || 1) || 400;
@@ -754,13 +894,25 @@
                 let playerOffset = 0;
                 let enemyOffset = 0;
                 if (animationState.type === 'attack') {
-                    const attackDistance = 20 * (1 - progress);
+                    const lungeProgress = Math.min(1, progress * 2);
+                    const attackDistance = 20 * Math.sin(lungeProgress * Math.PI);
+                    const recoil = Math.sin(progress * Math.PI * 6) * 3 * (1 - progress);
                     if (animationState.actor === 'player') {
                         playerOffset = attackDistance;
+                        enemyOffset = recoil;
                     } else {
                         enemyOffset = -attackDistance;
+                        playerOffset = -recoil;
                     }
                 }
+
+                let shakeX = 0, shakeY = 0;
+                if (timestamp < shakeUntil) {
+                    shakeX = (Math.random() - 0.5) * 2 * shakeMagnitude;
+                    shakeY = (Math.random() - 0.5) * 2 * shakeMagnitude;
+                }
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
 
                 if (flashAlpha > 0) {
                     ctx.save();
@@ -777,7 +929,7 @@
                     const enemyWidth = (enemyBounds.maxX - enemyBounds.minX) * scale;
                     const playerBaseX = width * 0.26 - playerWidth / 2 - playerBounds.minX * scale + playerOffset;
                     const enemyBaseX = width * 0.74 - enemyWidth / 2 - enemyBounds.minX * scale + enemyOffset;
-                    const monsterY = height * 0.6 + bob;
+                    const monsterY = height * 0.5 + bob;
 
                     ctx.save();
                     ctx.translate(playerBaseX, monsterY);
@@ -792,10 +944,34 @@
                     ctx.restore();
 
                     ctx.font = '14px Arial';
-                    ctx.fillText(`${currentmon.name}`, width * 0.26, height - 52);
-                    ctx.fillText(`${Enemymon.name}`, width * 0.74, height - 52);
-                    ctx.fillText(`HP ${currentHP}/${maxPlayerHP}`, width * 0.26, height - 32);
-                    ctx.fillText(`HP ${enemyBattleHealth}/${Enemymon.BattleStats.health}`, width * 0.74, height - 32);
+                    ctx.fillText(`${currentmon.name}`, width * 0.26, height - 120);
+                    ctx.fillText(`${Enemymon.name}`, width * 0.74, height - 120);
+                    ctx.font = '12px Arial';
+                    ctx.fillText(`HP ${currentHP}/${maxPlayerHP}`, width * 0.26, height - 104);
+                    ctx.fillText(`HP ${enemyBattleHealth}/${Enemymon.BattleStats.health}`, width * 0.74, height - 104);
+
+                    const hpBarWidth = width * 0.32;
+                    const playerHpRatio = Math.max(0, Math.min(1, currentHP / Math.max(1, maxPlayerHP)));
+                    const enemyHpRatio = Math.max(0, Math.min(1, enemyBattleHealth / Math.max(1, Enemymon.BattleStats.health)));
+                    drawHpBar(width * 0.26 - hpBarWidth / 2, height - 92, hpBarWidth, playerHpRatio);
+                    drawHpBar(width * 0.74 - hpBarWidth / 2, height - 92, hpBarWidth, enemyHpRatio);
+
+                    damagePopups = damagePopups.filter(popup => timestamp - popup.startTime < 800);
+                    damagePopups.forEach(popup => {
+                        const age = (timestamp - popup.startTime) / 800;
+                        const x = popup.side === 'player' ? width * 0.26 : width * 0.74;
+                        const y = monsterY - 20 - age * 26;
+                        ctx.save();
+                        ctx.globalAlpha = Math.max(0, 1 - age);
+                        ctx.fillStyle = '#dc2626';
+                        ctx.font = 'bold 18px Arial';
+                        ctx.fillText(`-${popup.amount}`, x, y);
+                        ctx.restore();
+                    });
+
+                    // Draw the Precision Timing Bar when fighting
+                    drawTimingMeter();
+
                 } else if (currentmon && currentmon.spriteData) {
                     const scale = Math.min(width, height) * 0.04;
                     const bounds = getSpriteBounds(currentmon.spriteData);
@@ -817,6 +993,22 @@
                     ctx.font = '18px Arial';
                     ctx.fillText('Hatching...', width / 2, height / 2);
                 }
+
+                ctx.restore();
+            }
+
+            function drawHpBar(x, y, width, ratio) {
+                const barH = 6;
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.15)';
+                ctx.fillRect(x, y, width, barH);
+                const fillColor = ratio > 0.5 ? '#22c55e' : ratio > 0.2 ? '#f59e0b' : '#ef4444';
+                ctx.fillStyle = fillColor;
+                ctx.fillRect(x, y, width * ratio, barH);
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, width, barH);
+                ctx.restore();
             }
 
             window.addEventListener('load', () => {
@@ -825,6 +1017,18 @@
                 requestAnimationFrame(animateFrame);
             });
             window.addEventListener('resize', resizeCanvas);
+
+            window.addEventListener('keydown', (e) => {
+                if (e.code === "Space" && inBattle && turn === "player") {
+                    checkTiming();
+                }
+            });
+
+            canvas.addEventListener('mousedown', () => {
+                if (inBattle && turn === "player") {
+                    checkTiming();
+                }
+            });
 
             function hungerDecay() {
                 hunger -= 0.1;
@@ -842,7 +1046,6 @@
                     restart();
                 }
             }
-
 
             function startTimer() {
                 if (timerInterval) return;
@@ -945,15 +1148,6 @@
                 updateMonsterDisplay();
             }
 
-            function GenerateRaid() {
-                initRandomMon()
-                EnemyBattlehealth = EnemyBattlehealth + 100;
-                EnemyBattleDamage = EnemyBattleDamage + 4;
-                currentmon = Enemymon
-
-
-            }
-
             function FeedButton() {
                 hunger += 10;
                 if (hunger > 20) hunger = 20;
@@ -1026,9 +1220,10 @@
             }
 
             function getPlayerDamage() {
-                const attack = currentmon?.BattleStats?.attack ?? 1;
+                const baseAtk = currentmon?.BattleStats?.attack ?? 1;
                 const defense = Enemymon?.BattleStats?.defense ?? 0;
-                return Math.max(1, attack - defense);
+                const effectiveAttack = Math.max(1, baseAtk - effort);
+                return Math.max(1, effectiveAttack - defense);
             }
 
             function getEnemyDamage() {
@@ -1038,6 +1233,8 @@
             }
 
             function resetBattleHP() {
+                damagePopups = [];
+                shakeUntil = 0;
                 if (currentmon && currentmon.BattleStats) {
                     maxPlayerHP = Math.max(1, currentmon.BattleStats.health);
                     currentHP = maxPlayerHP;
@@ -1055,6 +1252,8 @@
                 const damage = getPlayerDamage();
                 enemyBattleHealth = Math.max(0, enemyBattleHealth - damage);
                 console.log(`${currentmon.name} attacks for ${damage} damage!`);
+                spawnDamagePopup(damage, 'enemy');
+                triggerShake(280, 5);
                 updateBattleDisplay();
 
                 if (enemyBattleHealth <= 0) {
@@ -1063,11 +1262,11 @@
                         sendGameData({ type: 'attack', damage: damage });
                     }
                     endBattle();
-                    // 5. Show the image
                     winImg.style.display = "block";
+                    popIn(winImg);
                     setTimeout(() => {
-                     winImg.style.display = "none"; 
-                        }, 3000);
+                        winImg.style.display = "none";
+                    }, 3000);
                     return;
                 }
 
@@ -1080,6 +1279,10 @@
                     document.getElementById('NextButton').style.display = 'inline-block';
                 }
 
+                // Reset timing state for next turn
+                timingState = "PLAYING";
+                needleX = barX;
+                scoreText = "";
             }
 
             function Next() {
@@ -1094,14 +1297,17 @@
                 currentHP = Math.max(0, currentHP - damage);
                 playerBattleHealth = currentHP;
                 console.log(`${Enemymon.name} attacks for ${damage} damage!`);
+                spawnDamagePopup(damage, 'player');
+                triggerShake(280, 5);
                 updateBattleDisplay();
 
                 if (playerBattleHealth <= 0) {
                     customAlert(`Defeat! ${currentmon.name} lost to ${Enemymon.name}!`);
                     endBattle();
                     LosImg.style.display = "block";
+                    popIn(LosImg);
                     setTimeout(() => {
-                        LosImg.style.display = "none"; 
+                        LosImg.style.display = "none";
                     }, 3000);
                     return;
                 }
@@ -1158,10 +1364,15 @@
                 hideButtons();
                 document.getElementById('HostButton').style.display = 'inline-block';
                 document.getElementById('JoinButton').style.display = 'inline-block';
+                document.getElementById('RaidsButton').style.display = 'inline-block';
                 document.getElementById('MenuButton').style.display = 'none';
                 document.getElementById('onlineBattleButton').style.display = 'none';
                 document.getElementById('localBattleButton').style.display = 'none';
                 document.getElementById('backButton').style.display = 'inline-block';
+            }
+
+            function goToRaids() {
+                window.location.href = 'RaidHost.html';
             }
 
             function hostMatch() {
@@ -1169,10 +1380,8 @@
                 isOnlineBattle = true;
                 hideBattleButtons();
 
-                // Clean up any previous peer
                 if (peer) { try { peer.destroy(); } catch (e) { } }
 
-                // Generate a short room code
                 const roomCode = 'BYTEBI-' + Math.random().toString(36).substring(2, 6).toUpperCase();
                 console.log("Hosting match with room code:", roomCode);
 
@@ -1205,191 +1414,36 @@
                     console.log('Join cancelled.');
                     return;
                 }
-                isHost = false;
-                isOnlineBattle = true;
-                hideBattleButtons();
 
-                // Clean up any previous peer
-                if (peer) { try { peer.destroy(); } catch (e) { } }
+                const cleanedCode = roomCode.trim();
 
-                peer = new Peer();
-
-                peer.on('open', () => {
-                    console.log('Connecting to host:', roomCode.trim());
-                    conn = peer.connect(roomCode.trim());
-                    setupPeerConnection(conn);
-                });
-
-                peer.on('error', (err) => {
-                    console.error('PeerJS error:', err);
-                    customAlert('Could not connect: ' + err.message);
-                    endBattle();
-                });
-            }
-
-            function setupPeerConnection(connection) {
-                connection.on('open', () => {
-                    console.log('CONNECTED to match!');
-                    if (!currentmon) {
-                        initRandomMon();
-                    }
-                    connection.send({ type: 'init', monster: currentmon });
-                });
-
-                connection.on('data', (data) => {
-                    try {
-                        handleIncomingGameData(data);
-                    } catch (e) {
-                        console.error('Failed to handle game data:', e);
-                    }
-                });
-
-                connection.on('close', () => {
-                    console.log('Peer connection closed.');
-                    if (inBattle) {
-                        customAlert('Multiplayer connection lost.');
-                        endBattle();
-                    }
-                });
-
-                connection.on('error', (err) => {
-                    console.error('Connection error:', err);
-                    customAlert('Connection error.');
-                    endBattle();
-                });
-            }
-
-            function sendGameData(data) {
-                if (conn && conn.open) {
-                    conn.send(data);
-                }
-            }
-
-            function handleIncomingGameData(data) {
-                if (!data) return;
-
-                if (data.type === 'init') {
-                    Enemymon = data.monster;
-                    inBattle = true;
-                    gamestate = 'battle';
-                    triggerAnimation('battle-start', 800);
-                    hideButtons();
+                if (cleanedCode.toUpperCase().startsWith('BYTEBI')) {
+                    isHost = false;
+                    isOnlineBattle = true;
                     hideBattleButtons();
 
-                    resetBattleHP();
+                    if (peer) { try { peer.destroy(); } catch (e) { } }
 
-                    console.log(`Connected to peer! Enemy ${Enemymon.name} appeared!`);
-                    showMonster();
-                    showEnemyMonster();
-                    updateBattleDisplay();
+                    peer = new Peer();
 
-                    if (isHost) {
-                        const startTurn = Math.random() < 0.5 ? 'player' : 'enemy';
-                        turn = startTurn;
-                        sendGameData({ type: 'start', turn: startTurn === 'player' ? 'enemy' : 'player' });
-                        document.getElementById('AttackButton').style.display = turn === 'player' ? 'inline-block' : 'none';
-                        document.getElementById('NextButton').style.display = 'none';
-                    }
-                } else if (data.type === 'start') {
-                    turn = data.turn;
-                    console.log(`Battle started. It is ${turn}'s turn.`);
-                    document.getElementById('AttackButton').style.display = turn === 'player' ? 'inline-block' : 'none';
-                    document.getElementById('NextButton').style.display = 'none';
-                } else if (data.type === 'attack') {
-                    triggerAnimation('attack', 350, 'enemy');
-                    const damage = data.damage;
-                    currentHP = Math.max(0, currentHP - damage);
-                    playerBattleHealth = currentHP;
-                    updateBattleDisplay();
+                    peer.on('open', () => {
+                        console.log('Connecting to host:', cleanedCode);
+                        conn = peer.connect(cleanedCode);
+                        setupPeerConnection(conn);
+                    });
 
-                    if (playerBattleHealth <= 0) {
-                        customAlert(`Defeat! ${currentmon.name} lost to ${Enemymon.name}!`);
+                    peer.on('error', (err) => {
+                        console.error('PeerJS error:', err);
+                        customAlert('Could not connect: ' + err.message);
                         endBattle();
-                        LosImg.style.display = "block";
-                        return;
-                    }
-
-                    turn = "player";
-                    document.getElementById('AttackButton').style.display = 'inline-block';
-                    document.getElementById('NextButton').style.display = 'none';
-                }
-            }
-
-            function localBattle() {
-                console.log('Starting local battle...');
-                hideTrainButtons();
-                hideBattleButtons();
-                startBattle();
-            }
-
-            function pickRandomEnemyMonster() {
-                if (!currentmon) {
-                    initRandomMon();
-                }
-                let enemyIndex = Math.floor(Math.random() * BaseMon.length);
-                while (BaseMon[enemyIndex].id === currentmon.id && BaseMon.length > 1) {
-                    enemyIndex = Math.floor(Math.random() * BaseMon.length);
-                }
-                return JSON.parse(JSON.stringify(BaseMon[enemyIndex]));
-            }
-
-            function startBattle() {
-                if (!currentmon) {
-                    initRandomMon();
-                }
-
-                Enemymon = pickRandomEnemyMonster();
-                if (!Enemymon) return;
-
-                inBattle = true;
-                gamestate = 'battle';
-                triggerAnimation('battle-start', 800);
-                hideButtons();
-
-                resetBattleHP();
-                showMonster();
-                showEnemyMonster();
-                updateBattleDisplay();
-                initRandomTurn();
-            }
-
-            function initRandomTurn() {
-                turn = Math.random() < 0.5 ? 'player' : 'enemy';
-                console.log(`${turn}'s turn!`);
-                if (turn === 'player') {
-                    document.getElementById('AttackButton').style.display = 'inline-block';
-                    document.getElementById('NextButton').style.display = 'none';
+                    });
+                } else if (cleanedCode.toUpperCase().startsWith('BYTERAID')) {
+                    await customAlert('That is a raid code! Taking you to the Raid page to join up with your team.');
+                    try { sessionStorage.setItem('pendingRaidCode', cleanedCode); } catch (e) { }
+                    window.location.href = 'RaidHost.html';
                 } else {
-                    document.getElementById('AttackButton').style.display = 'none';
-                    document.getElementById('NextButton').style.display = 'inline-block';
+                    customAlert('That room code was not recognized. Double check it and try again.');
                 }
-            }
-
-            function Evolve() {
-                if (currentmon && requirements) {
-                    if (timer >= currentmon.evoTime) {
-                        if (stats.attack >= (requirements.attack || 0) && stats.defense >= (requirements.defense || 0)) {
-                            console.log("Evolving", currentmon.name);
-                            // Custom evolution upgrades can be linked here
-                        } else {
-                            // Clean up any previous peer
-                            if (peer) { try { peer.destroy(); } catch (e) { } }
-                        }
-                    }
-                }
-                peer = new Peer();
-
-                peer.on('open', () => {
-                    console.log('Connecting to host:', roomCode.trim());
-                    conn = peer.connect(roomCode.trim());
-                    setupPeerConnection(conn);
-                });
-
-                peer.on('error', (err) => {
-                    console.error('PeerJS error:', err);
-                    customAlert('Could not connect: ' + err.message);
-                    endBattle();
-                });
             }
 
             function setupPeerConnection(connection) {
@@ -1465,14 +1519,17 @@
                     const damage = data.damage;
                     currentHP = Math.max(0, currentHP - damage);
                     playerBattleHealth = currentHP;
+                    spawnDamagePopup(damage, 'player');
+                    triggerShake(280, 5);
                     updateBattleDisplay();
 
                     if (playerBattleHealth <= 0) {
                         customAlert(`Defeat! ${currentmon.name} lost to ${Enemymon.name}!`);
                         endBattle();
                         LosImg.style.display = "block";
+                        popIn(LosImg);
                         setTimeout(() => {
-                        LosImg.style.display = "none"; 
+                            LosImg.style.display = "none";
                         }, 3000);
                         return;
                     }
@@ -1538,7 +1595,6 @@
                     if (timer >= currentmon.evoTime) {
                         if (stats.attack >= (requirements.attack || 0) && stats.defense >= (requirements.defense || 0)) {
                             console.log("Evolving", currentmon.name);
-                            // Custom evolution upgrades can be linked here
                         } else {
                             console.log("Requirements not met for evolution.");
                         }
@@ -1565,6 +1621,7 @@
                 document.getElementById('localBattleButton').style.display = 'none';
                 document.getElementById('HostButton').style.display = 'none';
                 document.getElementById('JoinButton').style.display = 'none';
+                document.getElementById('RaidsButton').style.display = 'none';
                 document.getElementById('MenuButton').style.display = 'none';
             }
 
@@ -1603,11 +1660,7 @@
                 hideButtons();
                 updateGameState();
             }
-            
         </script>
-
-       
-
     </div>
-
+</body>
 </html>
