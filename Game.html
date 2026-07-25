@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bytebimon</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7329195604411751" crossorigin="anonymous"></script> <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -143,10 +144,9 @@
             text-align: center;
         }
     </style>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7329195604411751"
-     crossorigin="anonymous"></script>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
+
 <nav>
     <a href="Game.html">Game</a> |
     <a href="RaidHost.html">Raids</a> |
@@ -181,6 +181,7 @@
                 <button id="restartButton" onclick="restart()" style="display: none;">Restart</button>
                 <button id="TrainDefenseButton" onclick="TdefenseButton()" style="display: none;">Train Defense</button>
                 <button id="TrainAttackButton" onclick="TattackButton()" style="display: none;">Train Attack</button>
+                <button id="TrainSpatialButton" onclick="TspatialButton()" style="display: none;">Train Spatial</button>
                 <button id="backButton" onclick="Back()" style="display: none;">Back</button>
             </div>
         </div>
@@ -190,34 +191,27 @@
             <canvas id="myCanvas" width="500" height="400"></canvas>
         </div>
 
-        <div id="monsterPlaceholder" class="monster-placeholder player-monster" style="display: none;"
-            aria-live="polite">
+        <div id="monsterPlaceholder" class="monster-placeholder player-monster" style="display: none;" aria-live="polite">
             <svg width="96" height="96" viewBox="0 0 24 24" aria-hidden="true">
                 <use href="#Mon"></use>
             </svg>
             <div id="monsterLabel">Ardumon placeholder</div>
         </div>
 
-        <div id="enemyMonsterPlaceholder" class="monster-placeholder enemy-monster" style="display: none;"
-            aria-live="polite">
+        <div id="enemyMonsterPlaceholder" class="monster-placeholder enemy-monster" style="display: none;" aria-live="polite">
             <svg width="96" height="96" viewBox="0 0 24 24" aria-hidden="true">
                 <use href="#Mon"></use>
             </svg>
             <div id="enemyMonsterLabel">Enemy Ardumon</div>
         </div>
 
-        <div id="customDialogOverlay"
-            style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
-            <div
-                style="background:white; padding:20px; border-radius:10px; text-align:center; min-width:300px; max-width:80%; font-family:Arial; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <div id="customDialogOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
+            <div style="background:white; padding:20px; border-radius:10px; text-align:center; min-width:300px; max-width:80%; font-family:Arial; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                 <p id="customDialogMsg" style="color:black; margin-bottom:15px; font-size:18px;"></p>
-                <input type="text" id="customDialogInput"
-                    style="display:none; margin-bottom:15px; width:100%; padding:10px; font-size:16px; border:1px solid #ccc; border-radius:5px;">
+                <input type="text" id="customDialogInput" style="display:none; margin-bottom:15px; width:100%; padding:10px; font-size:16px; border:1px solid #ccc; border-radius:5px;">
                 <div style="display:flex; justify-content:center; gap:10px;">
-                    <button id="customDialogOk"
-                        style="background:#007bff; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">OK</button>
-                    <button id="customDialogCancel"
-                        style="display:none; background:#ccc; color:black; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">Cancel</button>
+                    <button id="customDialogOk" style="background:#007bff; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">OK</button>
+                    <button id="customDialogCancel" style="display:none; background:#ccc; color:black; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">Cancel</button>
                 </div>
             </div>
         </div>
@@ -314,6 +308,24 @@
             // Game state variables
             let timingState = "PLAYING"; // "PLAYING", "SUCCESS", or "MISS"
             let scoreText = "";
+
+            // ==========================================
+            // SPATIAL AVOIDANCE MINIGAME CONFIG & STATE
+            // ==========================================
+            const SPATIAL_CONFIG = {
+                WIN_SCORE: 10,
+                MAX_HEALTH: 3,
+                PLAYER_SPEED: 5,
+                HAZARD_SPEED: 3
+            };
+
+            let spatialGameState = "MENU"; // MENU, TRAINING, VICTORY, GAME_OVER
+            let spatialScore = 0;
+            let spatialHealth = SPATIAL_CONFIG.MAX_HEALTH;
+            let spatialPlayer = { x: 250, y: 320, r: 16 };
+            let spatialTarget = { x: 0, y: 0, r: 12 };
+            let spatialHazards = [];
+            let activeKeys = {};
 
             function triggerAnimation(type, duration = 600, actor = 'player') {
                 animationState = { type, startTime: performance.now(), duration, actor };
@@ -561,6 +573,7 @@
             function Back() {
                 hideButtons();
                 hideBattleButtons();
+                hideTrainButtons();
                 gamestate = "idle";
                 updateGameState();
                 winImg.style.display = "none";
@@ -590,6 +603,7 @@
                         document.getElementById('NextButton').style.display = 'none';
                         document.getElementById('TrainAttackButton').style.display = 'none';
                         document.getElementById('TrainDefenseButton').style.display = 'none';
+                        document.getElementById('TrainSpatialButton').style.display = 'none';
                         document.getElementById('StartButton').style.display = 'none';
                         document.getElementById('SaveButton').style.display = 'inline-block';
                         winImg.style.display = "none";
@@ -602,6 +616,14 @@
                         break;
 
                     case "battle":
+                        break;
+
+                    case "train_spatial":
+                        hideButtons();
+                        hideBattleButtons();
+                        hideTrainButtons();
+                        document.getElementById('backButton').style.display = 'inline-block';
+                        spatialGameState = "MENU";
                         break;
                 }
             }
@@ -629,7 +651,7 @@
                     'MenuButton', 'feedButton', 'sleepButton', 'trainButton', 'battleButton',
                     'onlineBattleButton', 'localBattleButton', 'HostButton', 'JoinButton', 'RaidsButton',
                     'settingsButton', 'volumeButton',
-                    'updateButton', 'AttackButton', 'NextButton', 'TrainDefenseButton', 'TrainAttackButton', 'restartButton'
+                    'updateButton', 'AttackButton', 'NextButton', 'TrainDefenseButton', 'TrainAttackButton', 'TrainSpatialButton', 'restartButton'
                 ];
                 hiddenButtons.forEach((id) => {
                     const button = document.getElementById(id);
@@ -851,10 +873,207 @@
                 }
             }
 
+            // ==========================================
+            // SPATIAL AVOIDANCE MINIGAME ENGINE
+            // ==========================================
+
+            function startSpatialTraining() {
+                spatialScore = 0;
+                spatialHealth = SPATIAL_CONFIG.MAX_HEALTH;
+                spatialPlayer.x = 250;
+                spatialPlayer.y = 320;
+                spatialHazards = [];
+                spawnSpatialTarget();
+                spatialGameState = "TRAINING";
+            }
+
+            function spawnSpatialTarget() {
+                spatialTarget.x = Math.random() * 440 + 30;
+                spatialTarget.y = Math.random() * 260 + 80;
+            }
+
+            function renderSpatialMinigame(width, height) {
+                ctx.fillStyle = "#1e293b";
+                ctx.fillRect(0, 0, width, height);
+
+                switch (spatialGameState) {
+                    case "MENU":
+                        drawSpatialMenu(width, height);
+                        break;
+                    case "TRAINING":
+                        updateAndDrawSpatialTraining(width, height);
+                        break;
+                    case "VICTORY":
+                        drawSpatialEndScreen(true, width, height);
+                        break;
+                    case "GAME_OVER":
+                        drawSpatialEndScreen(false, width, height);
+                        break;
+                }
+            }
+
+            function drawSpatialMenu(width, height) {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 22px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("HAZARD AVOIDANCE TRAINING", width / 2, height / 2 - 40);
+
+                ctx.font = "14px Arial";
+                ctx.fillStyle = "#cbd5e1";
+                ctx.fillText("Collect green energy nodes while dodging red hazards.", width / 2, height / 2 - 10);
+                ctx.fillText("Use ARROW KEYS or WASD to move your Bytebimon.", width / 2, height / 2 + 15);
+
+                ctx.fillStyle = "#3b82f6";
+                ctx.fillRect(width / 2 - 90, height / 2 + 45, 180, 40);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px Arial";
+                ctx.fillText("PRESS SPACE", width / 2, height / 2 + 70);
+            }
+
+            function updateAndDrawSpatialTraining(width, height) {
+                // Movement Handling
+                if (activeKeys['ArrowLeft'] || activeKeys['KeyA']) spatialPlayer.x -= SPATIAL_CONFIG.PLAYER_SPEED;
+                if (activeKeys['ArrowRight'] || activeKeys['KeyD']) spatialPlayer.x += SPATIAL_CONFIG.PLAYER_SPEED;
+                if (activeKeys['ArrowUp'] || activeKeys['KeyW']) spatialPlayer.y -= SPATIAL_CONFIG.PLAYER_SPEED;
+                if (activeKeys['ArrowDown'] || activeKeys['KeyS']) spatialPlayer.y += SPATIAL_CONFIG.PLAYER_SPEED;
+
+                // Bounds Constraint
+                spatialPlayer.x = Math.max(spatialPlayer.r, Math.min(width - spatialPlayer.r, spatialPlayer.x));
+                spatialPlayer.y = Math.max(50 + spatialPlayer.r, Math.min(height - spatialPlayer.r, spatialPlayer.y));
+
+                // Spawn Hazards Periodically
+                if (Math.floor(performance.now() / 16) % 40 === 0) {
+                    spatialHazards.push({
+                        x: Math.random() * (width - 40) + 20,
+                        y: -10,
+                        r: Math.random() * 8 + 10,
+                        speed: Math.random() * 3 + SPATIAL_CONFIG.HAZARD_SPEED
+                    });
+                }
+
+                // Update & Render Hazards
+                for (let i = spatialHazards.length - 1; i >= 0; i--) {
+                    let h = spatialHazards[i];
+                    h.y += h.speed;
+
+                    ctx.fillStyle = "#ef4444";
+                    ctx.beginPath();
+                    ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Collision Check with Hazards
+                    let dx = spatialPlayer.x - h.x;
+                    let dy = spatialPlayer.y - h.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < spatialPlayer.r + h.r) {
+                        spatialHealth--;
+                        spatialHazards.splice(i, 1);
+                        if (spatialHealth <= 0) {
+                            spatialGameState = "GAME_OVER";
+                        }
+                        continue;
+                    }
+
+                    if (h.y > height + 20) spatialHazards.splice(i, 1);
+                }
+
+                // Target Handling
+                let targetDx = spatialPlayer.x - spatialTarget.x;
+                let targetDy = spatialPlayer.y - spatialTarget.y;
+                let targetDist = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+
+                if (targetDist < spatialPlayer.r + spatialTarget.r) {
+                    spatialScore++;
+                    if (spatialScore >= SPATIAL_CONFIG.WIN_SCORE) {
+                        spatialGameState = "VICTORY";
+                        // Stat Rewards
+                        stats.defense += 1;
+                        if (currentmon && currentmon.BattleStats) {
+                            currentmon.BattleStats.defense += 1;
+                        }
+                        hunger = Math.max(0, hunger - 1);
+                    } else {
+                        spawnSpatialTarget();
+                    }
+                }
+
+                // Render Target
+                ctx.fillStyle = "#10b981";
+                ctx.beginPath();
+                ctx.arc(spatialTarget.x, spatialTarget.y, spatialTarget.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Render Player Avatar (Using Currentmon Sprite Data)
+                if (currentmon && currentmon.spriteData) {
+                    const scale = 1.2;
+                    const bounds = getSpriteBounds(currentmon.spriteData);
+                    const spriteWidth = (bounds.maxX - bounds.minX) * scale;
+                    const spriteHeight = (bounds.maxY - bounds.minY) * scale;
+                    const spriteX = spatialPlayer.x - spriteWidth / 2 - bounds.minX * scale;
+                    const spriteY = spatialPlayer.y - spriteHeight / 2 - bounds.minY * scale;
+
+                    ctx.save();
+                    ctx.translate(spriteX, spriteY);
+                    drawSpriteToCanvas(currentmon.spriteData, 0, 0, scale);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = "#3b82f6";
+                    ctx.beginPath();
+                    ctx.arc(spatialPlayer.x, spatialPlayer.y, spatialPlayer.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Render HUD Header
+                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+                ctx.fillRect(0, 0, width, 40);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "14px Arial";
+                ctx.textAlign = "left";
+                ctx.fillText(`Targets: ${spatialScore} / ${SPATIAL_CONFIG.WIN_SCORE}`, 15, 25);
+
+                ctx.textAlign = "right";
+                let hpHearts = "";
+                for (let i = 0; i < SPATIAL_CONFIG.MAX_HEALTH; i++) {
+                    hpHearts += (i < spatialHealth) ? "❤️ " : "🖤 ";
+                }
+                ctx.fillText(`HP: ${hpHearts}`, width - 15, 25);
+            }
+
+            function drawSpatialEndScreen(isVictory, width, height) {
+                ctx.textAlign = "center";
+                ctx.font = "bold 24px Arial";
+
+                if (isVictory) {
+                    ctx.fillStyle = "#10b981";
+                    ctx.fillText("TRAINING PASSED!", width / 2, height / 2 - 30);
+                    ctx.fillStyle = "#cbd5e1";
+                    ctx.font = "14px Arial";
+                    ctx.fillText("+1 Defense Stat Earned!", width / 2, height / 2);
+                } else {
+                    ctx.fillStyle = "#ef4444";
+                    ctx.fillText("HAZARD LIMIT REACHED", width / 2, height / 2 - 30);
+                }
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "16px Arial";
+                ctx.fillText(`Final Score: ${spatialScore}`, width / 2, height / 2 + 30);
+                ctx.fillText("Press [R] to Retry or Back to Exit", width / 2, height / 2 + 60);
+            }
+
             function drawGameScene(timestamp = performance.now()) {
                 const width = canvas.width / (window.devicePixelRatio || 1) || 500;
                 const height = canvas.height / (window.devicePixelRatio || 1) || 400;
                 ctx.clearRect(0, 0, width, height);
+
+                if (gamestate === "train_spatial") {
+                    renderSpatialMinigame(width, height);
+                    return;
+                }
 
                 const bg = ctx.createLinearGradient(0, 0, 0, height);
                 bg.addColorStop(0, '#f7fbff');
@@ -1021,9 +1240,24 @@
             window.addEventListener('resize', resizeCanvas);
 
             window.addEventListener('keydown', (e) => {
+                activeKeys[e.code] = true;
+
                 if (e.code === "Space" && inBattle && turn === "player") {
                     checkTiming();
                 }
+
+                if (gamestate === "train_spatial") {
+                    if (e.code === "Space" && spatialGameState === "MENU") {
+                        startSpatialTraining();
+                    }
+                    if ((e.key === "r" || e.key === "R") && (spatialGameState === "GAME_OVER" || spatialGameState === "VICTORY")) {
+                        startSpatialTraining();
+                    }
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                activeKeys[e.code] = false;
             });
 
             canvas.addEventListener('mousedown', () => {
@@ -1175,14 +1409,21 @@
             function hideTrainButtons() {
                 document.getElementById('TrainAttackButton').style.display = 'none';
                 document.getElementById('TrainDefenseButton').style.display = 'none';
+                document.getElementById('TrainSpatialButton').style.display = 'none';
             }
 
             function TrainButton() {
                 document.getElementById('TrainAttackButton').style.display = 'inline-block';
                 document.getElementById('TrainDefenseButton').style.display = 'inline-block';
+                document.getElementById('TrainSpatialButton').style.display = 'inline-block';
                 hideButtons();
                 hideBattleButtons();
                 document.getElementById('backButton').style.display = 'inline-block';
+            }
+
+            function TspatialButton() {
+                gamestate = "train_spatial";
+                updateGameState();
             }
 
             function TattackButton() {
@@ -1650,19 +1891,37 @@
             async function update() {
                 console.log("Checking for updates...");
                 try {
-                    const response = await fetch('Update.json');
-                    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-                    updateMon = await response.json();
-                    customAlert("Game updated! New monsters loaded.");
-                } catch (error) {
-                    console.error("Failed to load updates:", error);
-                    customAlert("Failed to load updates. Make sure Update.json exists.");
+                    // Prompt user to pick a JSON update file
+                    const [fileHandle] = await window.showOpenFilePicker({
+                        types: [{
+                            description: 'JSON Update Files',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    });
+
+                    // 1. Get the File object
+                    const file = await fileHandle.getFile();
+
+                    // 2. Read the actual text content inside the file
+                    const fileContent = await file.text();
+
+                    // 3. Parse JSON data from file
+                    const updateData = JSON.parse(fileContent);
+
+                    // 4. Update state using the data from the file
+                    gamestate = updateData.status || "idle";
+
+                    hideButtons();
+                    updateGameState();
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error("Failed to load update file:", err);
+                        customAlert("Could not read update file.");
+                    }
                 }
-                gamestate = "idle";
-                hideButtons();
-                updateGameState();
             }
         </script>
     </div>
 </body>
+
 </html>
