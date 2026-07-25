@@ -494,6 +494,35 @@
                 }
             ];
 
+            // ---------- Storage Functions ----------
+            function load() {
+                const savedData = localStorage.getItem('ardumonGameData');
+                if (savedData) {
+                    const gameData = JSON.parse(savedData);
+                    
+                    // If a monster exists in saved game data, keep it!
+                    if (gameData.currentmon) {
+                        myMonster = gameData.currentmon;
+                        console.log("Game loaded successfully. Active monster loaded:", myMonster.name || myMonster);
+                        return;
+                    }
+                }
+                // Fallback to random if no saved monster exists
+                myMonster = pickRandomMon();
+                console.log("No saved monster found. Generated random monster:", myMonster.name);
+            }
+
+            function save() {
+                const gameData = {
+                    currentmon: myMonster
+                };
+                localStorage.setItem('ardumonGameData', JSON.stringify(gameData));
+                console.log("Game state saved.");
+            }
+
+            // Load saved data when the page loads
+            load();
+
             // ---------- sprite rendering helpers (copied from Game.html) ----------
             function renderSprite(spriteData) {
                 if (!spriteData || spriteData.length === 0) return '';
@@ -574,7 +603,6 @@
             let isHost = false;
             let inRaid = false;
             let myId = null;           // this client's player id
-            let myMonster = null;
             let boss = null;           // { name, spriteData, attack, defense, maxHealth, health }
             let players = {};          // playerId -> { id, name, monster, maxHp, hp, alive }
             let attackCooldown = false;
@@ -652,7 +680,7 @@
                 boss.health = boss.maxHealth;
 
                 players = {};
-                players[myId] = { id: myId, name: 'You (Host)', monster: myMonster, maxHp: myMonster.BattleStats.health, hp: myMonster.BattleStats.health, alive: true };
+                players[myId] = { id: myId, name: 'You (Host)', monster: myMonster, maxHp: myMonster.BattleStats ? myMonster.BattleStats.health : 10, hp: myMonster.BattleStats ? myMonster.BattleStats.health : 10, alive: true };
 
                 const roomCode = 'BYTERAID-' + Math.random().toString(36).substring(2, 6).toUpperCase();
 
@@ -696,8 +724,8 @@
                         id: pid,
                         name: data.name || ('Raider ' + (currentCount + 1)),
                         monster: data.monster,
-                        maxHp: data.monster.BattleStats.health,
-                        hp: data.monster.BattleStats.health,
+                        maxHp: data.monster.BattleStats ? data.monster.BattleStats.health : 10,
+                        hp: data.monster.BattleStats ? data.monster.BattleStats.health : 10,
                         alive: true
                     };
                     log(players[pid].name + ' (' + data.monster.name + ') joined the raid!');
@@ -723,7 +751,8 @@
                 const p = players[pid];
                 if (!p || !p.alive) return;
 
-                const dmg = Math.max(1, p.monster.BattleStats.attack - boss.defense);
+                const attackStat = p.monster.BattleStats ? p.monster.BattleStats.attack : 5;
+                const dmg = Math.max(1, attackStat - boss.defense);
                 boss.health = Math.max(0, boss.health - dmg);
                 log(p.name + "'s " + p.monster.name + ' hit the boss for ' + dmg + ' damage!');
                 animFlash = { player: pid, alpha: 1 };
@@ -740,270 +769,15 @@
                 const alive = Object.values(players).filter(pl => pl.alive);
                 if (alive.length > 0) {
                     const target = alive[Math.floor(Math.random() * alive.length)];
-                    const bossDmg = Math.max(1, boss.attack - (target.monster.BattleStats.defense || 0));
+                    const defStat = target.monster.BattleStats ? target.monster.BattleStats.defense : 3;
+                    const bossDmg = Math.max(1, boss.attack - defStat);
                     target.hp = Math.max(0, target.hp - bossDmg);
                     if (target.hp <= 0) {
                         target.alive = false;
-                        log(target.name + "'s " + target.monster.name + ' was knocked out!');
-                    } else {
-                        log('The boss struck back at ' + target.name + ' for ' + bossDmg + ' damage!');
                     }
                 }
-
-                const stillAlive = Object.values(players).some(pl => pl.alive);
-                if (!stillAlive) {
-                    log('The whole party has been knocked out! Raid failed.');
-                    broadcastState();
-                    broadcastEnd('lose');
-                    finishRaidVisual('lose');
-                    return;
-                }
-
-                broadcastState();
             }
-
-            function broadcastState() {
-                const payload = { type: 'state', boss: serializeBoss(), players: serializePlayers() };
-                Object.values(connections).forEach(c => { if (c.open) c.send(payload); });
-                renderRaid();
-            }
-
-            function broadcastEnd(result) {
-                const payload = { type: 'raidEnd', result: result };
-                Object.values(connections).forEach(c => { if (c.open) c.send(payload); });
-            }
-
-            function serializeBoss() {
-                return boss ? { name: boss.name, spriteData: boss.spriteData, health: boss.health, maxHealth: boss.maxHealth } : null;
-            }
-
-            function serializePlayers() {
-                const out = {};
-                Object.values(players).forEach(p => {
-                    out[p.id] = { id: p.id, name: p.name, monster: p.monster, maxHp: p.maxHp, hp: p.hp, alive: p.alive };
-                });
-                return out;
-            }
-
-            // ---------- JOINING ----------
-            async function joinRaid(prefilledCode) {
-                if (inRaid) return;
-                const roomCode = prefilledCode || await customPrompt('Enter the Raid Room Code:');
-                if (!roomCode || !roomCode.trim()) return;
-                const cleanedCode = roomCode.trim();
-
-                if (!cleanedCode.toUpperCase().startsWith('BYTERAID')) {
-                    customAlert('That doesn\'t look like a raid code. Raid codes start with BYTERAID-');
-                    return;
-                }
-
-                isHost = false;
-                if (!myMonster) myMonster = pickRandomMon();
-
-                if (peer) { try { peer.destroy(); } catch (e) { } }
-                peer = new Peer();
-
-                peer.on('open', (id) => {
-                    myId = id;
-                    conn = peer.connect(cleanedCode);
-                    conn.on('open', () => {
-                        conn.send({ type: 'join', name: 'Raider-' + id.substring(0, 4), monster: myMonster });
-                        inRaid = true;
-                        enterRaidUI();
-                        log('Connected! Waiting for raid state...');
-                    });
-                    conn.on('data', (data) => handleJoinerData(data));
-                    conn.on('close', () => {
-                        if (inRaid) {
-                            customAlert('Lost connection to the raid host.');
-                            leaveRaid();
-                        }
-                    });
-                    conn.on('error', (err) => {
-                        console.error(err);
-                        customAlert('Connection error: ' + err.message);
-                        leaveRaid();
-                    });
-                });
-
-                peer.on('error', (err) => {
-                    console.error('PeerJS error:', err);
-                    customAlert('Could not connect: ' + err.message);
-                });
-            }
-
-            function handleJoinerData(data) {
-                if (!data) return;
-                if (data.type === 'full') {
-                    customAlert('That raid is already full (max ' + MAX_RAIDERS + ' players).');
-                    leaveRaid();
-                } else if (data.type === 'state') {
-                    boss = data.boss;
-                    players = data.players;
-                    renderRaid();
-                } else if (data.type === 'raidEnd') {
-                    finishRaidVisual(data.result);
-                }
-            }
-
-            function attackBoss() {
-                if (!inRaid || attackCooldown) return;
-                if (!boss || boss.health <= 0) return;
-                if (players[myId] && !players[myId].alive) {
-                    customAlert('Your monster has been knocked out and cannot attack this raid.');
-                    return;
-                }
-
-                attackCooldown = true;
-                document.getElementById('AttackButton').disabled = true;
-                setTimeout(() => {
-                    attackCooldown = false;
-                    document.getElementById('AttackButton').disabled = false;
-                }, 1200);
-
-                if (isHost) {
-                    processAttack(myId);
-                } else if (conn && conn.open) {
-                    conn.send({ type: 'attack' });
-                }
-            }
-
-            function leaveRaid() {
-                if (conn) { try { conn.send({ type: 'leave' }); conn.close(); } catch (e) { } conn = null; }
-                if (peer) { try { peer.destroy(); } catch (e) { } peer = null; }
-                connections = {};
-                inRaid = false;
-                isHost = false;
-                boss = null;
-                players = {};
-                document.getElementById('roomCodeBox').style.display = 'none';
-                document.getElementById('bossPanel').style.display = 'none';
-                document.getElementById('roster').innerHTML = '';
-                document.getElementById('logPanel').innerHTML = '';
-                document.getElementById('logPanel').style.display = 'none';
-                document.getElementById('HostButton').style.display = 'inline-block';
-                document.getElementById('JoinButton').style.display = 'inline-block';
-                document.getElementById('AttackButton').style.display = 'none';
-                document.getElementById('LeaveButton').style.display = 'none';
-                winImg.style.display = 'none';
-                LosImg.style.display = 'none';
-                drawIdleScene();
-            }
-
-            function enterRaidUI() {
-                document.getElementById('HostButton').style.display = 'none';
-                document.getElementById('JoinButton').style.display = 'none';
-                document.getElementById('AttackButton').style.display = 'inline-block';
-                document.getElementById('LeaveButton').style.display = 'inline-block';
-                document.getElementById('bossPanel').style.display = 'flex';
-                renderRaid();
-            }
-
-            function finishRaidVisual(result) {
-                document.getElementById('AttackButton').style.display = 'none';
-                if (result === 'win') {
-                    winImg.style.display = 'block';
-                    setTimeout(() => { winImg.style.display = 'none'; }, 4000);
-                } else {
-                    LosImg.style.display = 'block';
-                    setTimeout(() => { LosImg.style.display = 'none'; }, 4000);
-                }
-            }
-
-            // ---------- rendering ----------
-            function renderRaid() {
-                if (boss) {
-                    document.getElementById('bossName').textContent = boss.name + (isHost ? ' (you are hosting)' : '');
-                    const pct = Math.max(0, Math.min(100, (boss.health / boss.maxHealth) * 100));
-                    document.getElementById('bossHpBar').style.width = pct + '%';
-                    document.getElementById('bossHpText').textContent = 'HP: ' + boss.health + '/' + boss.maxHealth;
-                }
-
-                const roster = document.getElementById('roster');
-                roster.innerHTML = '';
-                Object.values(players).forEach(p => {
-                    const card = document.createElement('div');
-                    card.className = 'player-card' + (p.id === myId ? ' you' : '') + (!p.alive ? ' down' : '');
-                    const hpPct = Math.max(0, Math.min(100, (p.hp / p.maxHp) * 100));
-                    card.innerHTML = `
-                        <svg width="56" height="56" viewBox="0 0 24 24">${renderSprite(p.monster.spriteData)}</svg>
-                        <div class="pname">${p.name}${p.id === myId ? ' (you)' : ''}</div>
-                        <div class="php">${p.monster.name} · ${p.alive ? p.hp + '/' + p.maxHp + ' HP' : 'Knocked out'}</div>
-                        <div class="hp-bar-outer"><div class="hp-bar-inner" style="width:${hpPct}%;"></div></div>
-                    `;
-                    roster.appendChild(card);
-                });
-
-                drawBattleScene();
-            }
-
-            function drawIdleScene() {
-                const width = canvas.width, height = canvas.height;
-                ctx.clearRect(0, 0, width, height);
-                const bg = ctx.createLinearGradient(0, 0, 0, height);
-                bg.addColorStop(0, '#f7fbff');
-                bg.addColorStop(1, '#d8ecff');
-                ctx.fillStyle = bg;
-                ctx.fillRect(0, 0, width, height);
-                ctx.fillStyle = '#1f2937';
-                ctx.textAlign = 'center';
-                ctx.font = 'bold 20px Arial';
-                ctx.fillText('Bytebimon Raids', width / 2, 32);
-                ctx.font = '16px Arial';
-                ctx.fillText('Host a raid or join one with a room code', width / 2, height / 2);
-            }
-
-            function drawBattleScene() {
-                const width = canvas.width, height = canvas.height;
-                ctx.clearRect(0, 0, width, height);
-                const bg = ctx.createLinearGradient(0, 0, 0, height);
-                bg.addColorStop(0, '#fff1f2');
-                bg.addColorStop(1, '#fee2e2');
-                ctx.fillStyle = bg;
-                ctx.fillRect(0, 0, width, height);
-
-                if (!boss) return;
-
-                const scale = Math.min(width, height) * 0.06;
-                const bounds = getSpriteBounds(boss.spriteData);
-                const spriteWidth = (bounds.maxX - bounds.minX) * scale;
-                const spriteX = width / 2 - spriteWidth / 2 - bounds.minX * scale;
-                const spriteY = height / 2 - 20;
-
-                let pulse = 1;
-                if (animFlash.alpha > 0) {
-                    pulse = 1 + animFlash.alpha * 0.1;
-                    animFlash.alpha = Math.max(0, animFlash.alpha - 0.08);
-                }
-
-                ctx.save();
-                ctx.translate(spriteX, spriteY);
-                ctx.scale(pulse, pulse);
-                drawSpriteToCanvas(boss.spriteData, 0, 0, scale);
-                ctx.restore();
-
-                ctx.fillStyle = '#1f2937';
-                ctx.textAlign = 'center';
-                ctx.font = 'bold 18px Arial';
-                ctx.fillText(boss.name, width / 2, 28);
-                ctx.font = '14px Arial';
-                ctx.fillText('HP: ' + boss.health + ' / ' + boss.maxHealth, width / 2, height - 12);
-
-                if (animFlash.alpha > 0) requestAnimationFrame(drawBattleScene);
-            }
-
-            window.addEventListener('load', () => {
-                drawIdleScene();
-                try {
-                    const pending = sessionStorage.getItem('pendingRaidCode');
-                    if (pending) {
-                        sessionStorage.removeItem('pendingRaidCode');
-                        joinRaid(pending);
-                    }
-                } catch (e) { }
-            });
         </script>
     </div>
 </body>
-
 </html>
