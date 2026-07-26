@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body style="background-color: rgb(0, 0, 0);">
+    </bodystyle>
+    <h1 style="color: #00970f;">Console</h1>
+    <p style="color: #00970f;">If you havent been here Ill explain, just type help? in the console</p>
+
+    <p style="color: #00970f;">hint: some available commands are (launch byte.exe, launch info, Web, launch desktop, help?)</p>
+
+    <form id="actionForm">
+        <label for="userInput">Type a command :</label>
+        <input type="text" id="userInput" placeholder="Type here..." required>
+        <button type="submit">Execute</button>
+    </form>
+    <script>
+
+    // 1. Select the form element
+    const form = document.getElementById('actionForm');
+
+    // 2. Listen for the form submission
+    form.addEventListener('submit', function(event) {
+    // Prevent the page from reloading on submit
+    event.preventDefault();
+
+    // 3. Get the value from the input field and clean it up
+    const command = document.getElementById('userInput').value.trim().toLowerCase();
+
+    // 4. Perform actions corresponding to what was written
+    if (command === "launch byte.exe") {
+    window.location.href = "../Game.html";
+    }
+    else if (command === "launch info") {
+     window.location.href = "Info.html";
+    }
+    else if (command === "Web") {
+    document.body.style.backgroundColor = "#fff";
+    document.body.style.color = "#000";
+    }
+    else if (command === "launch Desktop") {
+   window.location.href = "Desktop.html";
+    }
+     else if (command === "help?") {
+   window.location.href = "story.html.html";
+    }
+    else {
+    alert("Unknown command: " + command);
+    }
+    });
+    </script>
+
+</body>
+
+</html>
