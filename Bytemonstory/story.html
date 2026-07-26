@@ -138,7 +138,9 @@
             "The Embassy of Corruption, Anti-Viruses, and what I can only call Libra Equilibrium.",
             "Now that's enough about us. I will now tell you why you're important in this.",
             "You have been selected to be part of a group of people we call Byte Rangers.",
-            "So far, your job is to stop Corrupted and Berserk Bytemon."
+            "So far, your job is to stop Corrupted and Berserk Bytemon.",
+            "you will also get your own byte or bit mon to help you, but remember it is saved to your disk and is permanently with you",
+            "when your in the console use launch byte.exe to start"
         ];
 
         let storyIndex = 0;
@@ -153,7 +155,7 @@
 
                 output.innerText = storyLines[storyIndex];
             } else {
-                output.innerText = "[TRANSMISSION ENDED]";
+                output.innerText = "[TRANSMISSION ENDED], Redirecting...";
                 document.getElementById("Next").disabled = true;
                 document.getElementById("Next").style.opacity = "0.5";
                 document.getElementById("Next").style.cursor = "not-allowed";
