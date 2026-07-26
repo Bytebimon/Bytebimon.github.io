@@ -156,6 +156,7 @@
                 output.innerText = storyLines[storyIndex];
             } else {
                 output.innerText = "[TRANSMISSION ENDED], Redirecting...";
+                window.location.href = "console.html";
                 document.getElementById("Next").disabled = true;
                 document.getElementById("Next").style.opacity = "0.5";
                 document.getElementById("Next").style.cursor = "not-allowed";
