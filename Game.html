@@ -26,7 +26,7 @@
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
-            background: linear-gradient(135deg, #dbeafe, #fdf2f8);
+            background: linear-gradient(135deg, #000000, #0d5f04);
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -74,7 +74,7 @@
             border: 2px solid #333;
             border-radius: 16px;
             overflow: hidden;
-            background: linear-gradient(180deg, #f0f0f0 0%, #d7ecff 100%);
+            background: linear-gradient(180deg, #000000 0%, #013c166c 100%);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
         }
 
@@ -211,12 +211,12 @@
         </div>
 
         <div id="customDialogOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
-            <div style="background:white; padding:20px; border-radius:10px; text-align:center; min-width:300px; max-width:80%; font-family:Arial; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <div style="background:rgb(255, 251, 251); padding:20px; border-radius:10px; text-align:center; min-width:300px; max-width:80%; font-family:Arial; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                 <p id="customDialogMsg" style="color:black; margin-bottom:15px; font-size:18px;"></p>
                 <input type="text" id="customDialogInput" style="display:none; margin-bottom:15px; width:100%; padding:10px; font-size:16px; border:1px solid #ccc; border-radius:5px;">
                 <div style="display:flex; justify-content:center; gap:10px;">
-                    <button id="customDialogOk" style="background:#007bff; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">OK</button>
-                    <button id="customDialogCancel" style="display:none; background:#ccc; color:black; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">Cancel</button>
+                    <button id="customDialogOk" style="background:#5aa708ce; color:rgb(225, 148, 148); border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">OK</button>
+                    <button id="customDialogCancel" style="display:none; background:#f59a9a; color:black; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">Cancel</button>
                 </div>
             </div>
         </div>
