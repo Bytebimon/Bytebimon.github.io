@@ -250,6 +250,10 @@
             <span class="icon-symbol">💻</span>
             <span class="icon-title">Console</span>
         </div>
+        <div class="icon" onclick="openWindow('Byte-window')">
+            <span class="icon-symbol">B</span>
+            <span class="icon-title">Byte.exe</span>
+        </div>
     </div>
 
     <!-- Info Window -->
@@ -266,6 +270,17 @@
             <p style="margin-top: 10px;">Welcome to your desktop interface built using pure HTML, CSS, and JavaScript.</p>
         </div>
     </div>
+
+    <div id="Byte-window" class="window" style="top: 100px; left: 250px;">
+        <div class="window-header">
+            <span class="window-title">Bit Moniter</span>
+            <button class="close-btn" onclick="closeWindow('console-window')">×</button>
+        </div>
+        <div class="window-body b-body">
+            </form>
+        </div>
+    </div>
+
 
     <!-- Console Window -->
     <div id="console-window" class="window" style="top: 100px; left: 250px;">
