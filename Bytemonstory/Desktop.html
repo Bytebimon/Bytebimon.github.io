@@ -3,28 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <title>Web Desktop</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         body {
-            /* Sets the path to your image file */
-            background-image: url('Icons/HomeScreen.jpg'); 
-            
-            /* Prevents the image from repeating as a grid */
-            background-repeat: no-repeat; 
-            
-            /* Scales the image to cover the entire viewport */
-            background-size: cover; 
-            
-            /* Centers the image horizontally and vertically */
-            background-position: center; 
-            
-            /* Keeps the background fixed in place while scrolling */
-            background-attachment: fixed; 
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-image: url('Icons/HomeScreen.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            /* Fallback color if image is missing */
+            background-color: #1a202c; 
+        }
+
+        /* --- DESKTOP ICONS --- */
+        .desktop-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            width: max-content;
+        }
+
+        .icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+            cursor: pointer;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            border-radius: 6px;
+            padding: 8px;
+            transition: background 0.2s;
+        }
+
+        .icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .icon-symbol {
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+
+        .icon-title {
+            font-size: 13px;
+            text-align: center;
+        }
+
+        /* --- WINDOW STYLES --- */
+        .window {
+            position: absolute;
+            width: 450px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .window-header {
+            background: #2d3748;
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .window-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .close-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            background: #c53030;
+        }
+
+        .window-body {
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            color: #333;
+        }
+
+        /* Dark Mode Styling for Console Body */
+        .console-body {
+            background: #0d1117;
+            color: #39ff14; /* Terminal Green */
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+        }
+
+        /* --- TASKBAR --- */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            color: white;
+            z-index: 100;
+        }
+
+        .start-btn {
+            background: #3182ce;
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .start-btn:hover {
+            background: #2b6cb0;
+        }
+
+        .clock {
+            font-size: 13px;
+            font-weight: 500;
         }
     </style>
+</head>
+<body>
 
+    <!-- Desktop Grid Icons -->
+    <div class="desktop-icons">
+        <div class="icon" onclick="openWindow('info-window')">
+            <span class="icon-symbol">ℹ️</span>
+            <span class="icon-title">Info</span>
+        </div>
+        <div class="icon" onclick="openWindow('console-window')">
+            <span class="icon-symbol">💻</span>
+            <span class="icon-title">Console</span>
+        </div>
+    </div>
+
+    <!-- Info Window -->
+    <div id="info-window" class="window" style="top: 100px; left: 150px;">
+        <div class="window-header">
+            <span class="window-title">Application Info</span>
+            <button class="close-btn" onclick="closeWindow('info-window')">×</button>
+        </div>
+        <div class="window-body">
+            <h3>System Information</h3>
+            <hr style="margin: 10px 0;">
+            <p><strong>OS:</strong> WebOS v1.0</p>
+            <p><strong>Status:</strong> Active</p>
+            <p style="margin-top: 10px;">Welcome to your desktop interface built using pure HTML, CSS, and JavaScript.</p>
+        </div>
+    </div>
+
+    <!-- Console Window -->
+    <div id="console-window" class="window" style="top: 150px; left: 250px;">
+        <div class="window-header">
+            <span class="window-title">Terminal Console</span>
+            <button class="close-btn" onclick="closeWindow('console-window')">×</button>
+        </div>
+        <div class="window-body console-body">
+            <p>> System initialized...</p>
+            <p>> Ready for input.</p>
+            <p>> _</p>
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <button class="start-btn">Start</button>
+        <div class="clock" id="clock">00:00 AM</div>
+    </div>
+
+    <script>
+        // Open and Close Window Logic
+        function openWindow(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeWindow(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // Real-time Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
 </body>
 </html>
