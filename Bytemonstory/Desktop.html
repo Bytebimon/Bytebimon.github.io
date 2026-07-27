@@ -82,7 +82,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: move;
+            cursor: move; /* Indicates draggable surface */
         }
 
         .window-title {
@@ -271,16 +271,16 @@
         </div>
     </div>
 
+    <!-- Byte Window -->
     <div id="Byte-window" class="window" style="top: 100px; left: 250px;">
         <div class="window-header">
-            <span class="window-title">Bit Moniter</span>
-            <button class="close-btn" onclick="closeWindow('console-window')">×</button>
+            <span class="window-title">Bit Monitor</span>
+            <button class="close-btn" onclick="closeWindow('Byte-window')">×</button>
         </div>
         <div class="window-body b-body">
-            </form>
+            <iframe src="../Game.html" width="100%" height="300px" title="Embedded Content" style="border: none;"></iframe>
         </div>
     </div>
-
 
     <!-- Console Window -->
     <div id="console-window" class="window" style="top: 100px; left: 250px;">
@@ -318,14 +318,65 @@
     </div>
 
     <script>
+        let highestZIndex = 10;
+
         // Open and Close Window Logic
         function openWindow(id) {
-            document.getElementById(id).style.display = 'flex';
+            const win = document.getElementById(id);
+            if (win) {
+                win.style.display = 'flex';
+                bringToFront(win);
+            }
         }
 
         function closeWindow(id) {
-            document.getElementById(id).style.display = 'none';
+            const win = document.getElementById(id);
+            if (win) {
+                win.style.display = 'none';
+            }
         }
+
+        // Bring focused window to the front
+        function bringToFront(win) {
+            highestZIndex++;
+            win.style.zIndex = highestZIndex;
+        }
+
+        // Add depth focus to windows when clicked anywhere inside
+        document.querySelectorAll('.window').forEach(win => {
+            win.addEventListener('mousedown', () => bringToFront(win));
+        });
+
+        // Window Dragging Logic
+        document.querySelectorAll('.window-header').forEach(header => {
+            header.addEventListener('mousedown', function(e) {
+                // Prevent drag initialization when clicking the close button
+                if (e.target.classList.contains('close-btn')) return;
+
+                const win = header.parentElement;
+                bringToFront(win);
+
+                let shiftX = e.clientX - win.getBoundingClientRect().left;
+                let shiftY = e.clientY - win.getBoundingClientRect().top;
+
+                function moveAt(pageX, pageY) {
+                    win.style.left = pageX - shiftX + 'px';
+                    win.style.top = pageY - shiftY + 'px';
+                }
+
+                function onMouseMove(event) {
+                    moveAt(event.pageX, event.pageY);
+                }
+
+                // Attach movement listener globally to avoid losing hold on fast movements
+                document.addEventListener('mousemove', onMouseMove);
+
+                document.onmouseup = function() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.onmouseup = null;
+                };
+            });
+        });
 
         // Real-time Clock
         function updateClock() {
@@ -343,10 +394,10 @@
             const command = document.getElementById('userInput').value.trim().toLowerCase();
 
             if (command === "launch byte.exe") {
-                window.location.href = "../Game.html";
+                openWindow('Byte-window');
             }
             else if (command === "launch info") {
-                openWindow('info-window'); // Opens the info window in desktop mode
+                openWindow('info-window');
             }
             else if (command === "web") {
                 document.body.style.backgroundColor = "#e0e0e0";
