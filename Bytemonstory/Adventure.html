@@ -3,10 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document Title</title>
+    <title>Scanner</title>
+</head>
+<body>
     
-<h1>SCANNING.....</h1>
-<p>this feture is not available yet</p>
+    <h1>SCANNING.....</h1>
+    <p>Searching for items...</p>
+    
+    <!-- This is where the timer and results will show up -->
+    <h3 id="Timeleft">Next scan in: 5 seconds...</h3>
+    
+    <!-- This is where your inventory will show up -->
+    <p id="ItemsGained">🎒 Inventory: Empty</p>
 
+    <!-- A button to wipe your saved data -->
+    <button onclick="clearCache()">Clear Saved Inventory</button>
+
+    <script>
+        const timeLeftElement = document.getElementById("Timeleft");
+        const itemsGainedElement = document.getElementById("ItemsGained");
+
+        // LOAD FROM CACHE: Check if there is saved data in localStorage
+        // If there is, parse it back into an array. If not, start with an empty array [].
+        let currentItems = JSON.parse(localStorage.getItem("mySavedItems")) || [];
+
+        // If we loaded items from the cache, update the screen right away
+        if (currentItems.length > 0) {
+            itemsGainedElement.textContent = `🎒 Inventory: ${currentItems.join(', ')}`;
+        }
+
+        // The items you can find
+        const lootPool = [
+            "A chip", 
+            "D chip", 
+            "Evo Script", 
+            "S chip", 
+            "Chaos chip", 
+            "Data Infuser"
+        ];
+
+        // Start our countdown at 5 seconds
+        let countdown = 5;
+
+        // Run the timer every 1 second
+        const searchInterval = setInterval(() => {
+            
+            countdown--;
+            
+            if (countdown > 0) {
+                timeLeftElement.textContent = `Next scan in: ${countdown} seconds...`;
+            } else {
+                // When countdown hits 0, roll for the item!
+                if (Math.random() < 0.5) {
+                    
+                    const randomIndex = Math.floor(Math.random() * lootPool.length);
+                    const itemFound = lootPool[randomIndex];
+                    
+                    timeLeftElement.textContent = `🎉 Success! You found a [${itemFound}]!`;
+                    
+                    // Add item to array
+                    currentItems.push(itemFound);
+                    
+                    // SAVE TO CACHE: Convert the array to text and save it to localStorage
+                    localStorage.setItem("mySavedItems", JSON.stringify(currentItems));
+                    
+                    // Update the screen
+                    itemsGainedElement.textContent = `🎒 Inventory: ${currentItems.join(', ')}`;
+                    
+                } else {
+                    timeLeftElement.textContent = "❌ Nothing found this time. Scanning again...";
+                }
+                
+                // Reset the countdown back to 5
+                countdown = 60;
+            }
+            
+        }, 1000); 
+
+        // Function to clear the cache when the button is clicked
+        function clearCache() {
+            localStorage.removeItem("mySavedItems"); // Delete from browser cache
+            currentItems = []; // Empty the array
+            itemsGainedElement.textContent = "🎒 Inventory: Empty"; // Reset the text
+            timeLeftElement.textContent = "Data cleared. Restarting scan...";
+            countdown = 5; // Reset timer
+        }
+    </script>
 </body>
-</html>
+</html> 
