@@ -22,7 +22,6 @@
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            /* Fallback color if image is missing */
             background-color: #1a202c; 
         }
 
@@ -65,7 +64,7 @@
         /* --- WINDOW STYLES --- */
         .window {
             position: absolute;
-            width: 450px;
+            width: 550px;
             background: #ffffff;
             border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -109,17 +108,97 @@
 
         .window-body {
             padding: 15px;
-            height: 250px;
+            max-height: 400px;
             overflow-y: auto;
             color: #333;
         }
 
-        /* Dark Mode Styling for Console Body */
+        /* --- CONSOLE TERMINAL STYLING --- */
         .console-body {
-            background: #0d1117;
-            color: #39ff14; /* Terminal Green */
+            background-color: #050806;
+            color: #00ff66;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
+            padding: 20px;
+        }
+
+        .console-body h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(0, 255, 102, 0.5);
+        }
+
+        .console-body p {
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .hint {
+            opacity: 0.75;
+            font-size: 0.85rem;
+            border-left: 2px solid #00ff66;
+            padding-left: 10px;
+            margin: 15px 0;
+        }
+
+        #actionForm {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group label {
+            font-weight: bold;
+        }
+
+        .input-group input[type="text"] {
+            flex: 1;
+            background-color: #000;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            padding: 8px 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            outline: none;
+            box-shadow: inset 0 0 5px rgba(0, 255, 102, 0.2);
+        }
+
+        .input-group input[type="text"]:focus {
+            box-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
+        }
+
+        #actionForm button {
+            background-color: transparent;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            align-self: flex-end;
+        }
+
+        #actionForm button:hover {
+            background-color: #00ff66;
+            color: #050806;
+            box-shadow: 0 0 10px #00ff66;
+        }
+
+        #actionForm button:active {
+            transform: scale(0.97);
         }
 
         /* --- TASKBAR --- */
@@ -174,7 +253,7 @@
     </div>
 
     <!-- Info Window -->
-    <div id="info-window" class="window" style="top: 100px; left: 150px;">
+    <div id="info-window" class="window" style="top: 80px; left: 150px; width: 400px;">
         <div class="window-header">
             <span class="window-title">Application Info</span>
             <button class="close-btn" onclick="closeWindow('info-window')">×</button>
@@ -189,15 +268,31 @@
     </div>
 
     <!-- Console Window -->
-    <div id="console-window" class="window" style="top: 150px; left: 250px;">
+    <div id="console-window" class="window" style="top: 100px; left: 250px;">
         <div class="window-header">
-            <span class="window-title">Terminal Console</span>
+            <span class="window-title">SYS_CONSOLE // Command Gateway</span>
             <button class="close-btn" onclick="closeWindow('console-window')">×</button>
         </div>
         <div class="window-body console-body">
-            <p>> System initialized...</p>
-            <p>> Ready for input.</p>
-            <p>> _</p>
+            <h1>Console</h1>
+            <p>If you haven't been here, I'll explain—just type <strong>help?</strong> in the console.</p>
+
+            <div class="hint">
+                <strong>hint:</strong> available commands:
+                <br>&gt; launch byte.exe
+                <br>&gt; launch info
+                <br>&gt; web
+                <br>&gt; launch desktop
+                <br>&gt; help?
+            </div>
+
+            <form id="actionForm">
+                <div class="input-group">
+                    <label for="userInput">&gt;</label>
+                    <input type="text" id="userInput" placeholder="Type a command..." required autocomplete="off">
+                </div>
+                <button type="submit">Execute</button>
+            </form>
         </div>
     </div>
 
@@ -224,6 +319,36 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Console Form Logic
+        const form = document.getElementById('actionForm');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const command = document.getElementById('userInput').value.trim().toLowerCase();
+
+            if (command === "launch byte.exe") {
+                window.location.href = "../Game.html";
+            }
+            else if (command === "launch info") {
+                openWindow('info-window'); // Opens the info window in desktop mode
+            }
+            else if (command === "web") {
+                document.body.style.backgroundColor = "#e0e0e0";
+                document.body.style.backgroundImage = "none";
+            }
+            else if (command === "launch desktop") {
+                closeWindow('console-window');
+            }
+            else if (command === "help?") {
+                window.location.href = "story.html";
+            }
+            else {
+                alert("Unknown command: " + command);
+            }
+            
+            document.getElementById('userInput').value = "";
+        });
     </script>
 </body>
 </html>
