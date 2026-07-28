@@ -26,7 +26,9 @@
         // LOAD FROM CACHE: Check if there is saved data in localStorage
         // If there is, parse it back into an array. If not, start with an empty array [].
         let currentItems = JSON.parse(localStorage.getItem("mySavedItems")) || [];
-
+        function load () {
+        currentItems = JSON.parse(localStorage.getItem("mySavedItems")) || [];
+        }
         // If we loaded items from the cache, update the screen right away
         if (currentItems.length > 0) {
             itemsGainedElement.textContent = `🎒 Inventory: ${currentItems.join(', ')}`;
@@ -76,9 +78,10 @@
                 
                 // Reset the countdown back to 5
                 countdown = 60;
+                load()
             }
             
-        }, 1000); 
+        } , 1000); 
 
         // Function to clear the cache when the button is clicked
         function clearCache() {
