@@ -27,7 +27,7 @@ const server = http.createServer((req, res) => {
 
     // Serve static files
     let filePath = path.join(__dirname, req.url);
-    if (req.url === '/') filePath = path.join(__dirname, 'Index.html');
+    if (req.url === '/') filePath = path.join(__dirname, 'index.html');
     
     const extname = path.extname(filePath);
     let contentType = 'text/html';

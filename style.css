@@ -1,0 +1,66 @@
+/* Shared site stylesheet for ByteBimon's simpler pages
+   (Home/About/Contact style pages already ship their own <style> blocks;
+   this file backs the pages that link to style.css directly.) */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #dbeafe, #fdf2f8);
+    color: #1f2937;
+}
+
+nav {
+    width: 100%;
+    text-align: center;
+    padding: 10px 0 20px;
+    font-size: 0.95rem;
+}
+
+nav a {
+    color: #1d4ed8;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+h1, h2, h3 {
+    color: #1f2937;
+}
+
+a {
+    color: #1d4ed8;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.action-buttons button {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #94a3b8;
+    background: #f8fafc;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.action-buttons button:hover {
+    background: #e2e8f0;
+}

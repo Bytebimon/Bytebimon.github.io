@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bytebimon</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --primary: #1e90ff;
+      --accent: #ff6f61;
+      --text: #e0e0e0;
+      --glass: rgba(255,255,255,0.12);
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #0a0a0f, #1a1a2e);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+    }
+    .card {
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      padding: 30px;
+      max-width: 600px;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 2.5rem;
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+    background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      line-height: 1.6;
+    }
+    .back {
+      margin-top: 20px;
+      display: inline-block;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back:hover { text-decoration: underline; }
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🦎</div>
+    <h1>Bytebimon</h1>
+    <p>Welcome to the Bytebimon world! Explore, collect, and battle with these whimsical digital creatures. Each Bytebimon has unique abilities that evolve as you progress.</p>
+    <p>Use the navigation bar in the main Browser to jump between sites, or dive deeper into the lore, stats, and strategies for each Bytebimon.</p>
+    <a href="Browser.html" class="back">← Back to Browser</a>
+  </div>
+</body>
+</html>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Desktop</title>
-    <link rel="icon" type="../image/png" href="/Assets/Icon.png">
+    <link rel="icon" type="image/png" href="/Assets/Icon.png">
 
     <style>
         * {
@@ -24,29 +25,32 @@
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            background-color: #1a202c; 
+            background-color: #1a202c;
         }
 
         /* --- DESKTOP ICONS --- */
         .desktop-icons {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            padding: 20px;
-            width: max-content;
+            position: absolute;
+            inset: 0;
+            z-index: 1;
         }
 
         .icon {
+            position: absolute;
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 80px;
-            cursor: pointer;
+            cursor: grab;
             color: white;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
             border-radius: 6px;
             padding: 8px;
             transition: background 0.2s;
+        }
+
+        .icon:active {
+            cursor: grabbing;
         }
 
         .icon:hover {
@@ -69,11 +73,12 @@
             width: 550px;
             background: #ffffff;
             border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            display: none; /* Hidden by default */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            /* Hidden by default */
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.2);
+            border: 1px solid rgba(0, 0, 0, 0.2);
             z-index: 10;
         }
 
@@ -84,7 +89,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: move; /* Indicates draggable surface */
+            cursor: move;
         }
 
         .window-title {
@@ -217,7 +222,11 @@
             justify-content: space-between;
             padding: 0 15px;
             color: white;
-            z-index: 100;
+            z-index: 300;
+        }
+
+        .start-container {
+            position: relative;
         }
 
         .start-btn {
@@ -230,8 +239,66 @@
             cursor: pointer;
         }
 
-        .start-btn:hover {
+        .start-btn:hover,
+        .start-btn.open {
             background: #2b6cb0;
+        }
+
+        .start-menu {
+            display: none;
+            position: absolute;
+            bottom: 46px;
+            left: 0;
+            width: 210px;
+            background: rgba(15, 23, 42, 0.97);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 301;
+        }
+
+        .start-menu.open {
+            display: block;
+        }
+
+        .start-menu-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .start-menu-item:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .start-menu-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.15);
+            margin: 4px 0;
+        }
+
+        .taskbar-apps {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+            padding: 0 14px;
+            overflow-x: auto;
+        }
+
+        .taskbar-app-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .taskbar-app-btn.active {
+            background: #3182ce;
         }
 
         .clock {
@@ -240,30 +307,38 @@
         }
     </style>
 </head>
+
 <body>
 
-    <!-- Desktop Grid Icons -->
-    <div class="desktop-icons">
-        <div class="icon" onclick="openWindow('info-window')">
+    <!-- Desktop Grid Icons (draggable) -->
+    <div class="desktop-icons" id="desktopIcons">
+        <div class="icon" data-icon-id="info" data-window="info-window">
             <span class="icon-symbol">ℹ️</span>
             <span class="icon-title">Info</span>
         </div>
-        <div class="icon" onclick="openWindow('console-window')">
+        <div class="icon" data-icon-id="console" data-window="console-window">
             <span class="icon-symbol">💻</span>
             <span class="icon-title">Console</span>
         </div>
-        <div class="icon" onclick="openWindow('Byte-window')">
-            <span class="icon-symbol">B</span>
+        <div class="icon" data-icon-id="byte" data-window="Byte-window">
+            <span class="icon-symbol">🅱️</span>
             <span class="icon-title">Byte.exe</span>
         </div>
-         <div class="icon" onclick="openWindow('digital-window')">
+        <div class="icon" data-icon-id="scanner" data-window="digital-window">
             <span class="icon-symbol">👾</span>
             <span class="icon-title">DigitalScanner</span>
         </div>
-
-        <div class="icon" onclick="openWindow('Item-window')">
+        <div class="icon" data-icon-id="web" data-window="Web-window">
+            <span class="icon-symbol">🌐</span>
+            <span class="icon-title">Web</span>
+        </div>
+        <div class="icon" data-icon-id="items" data-window="Item-window">
             <span class="icon-symbol">🛄</span>
-            <span class="icon-title">DigitalScanner</span>
+            <span class="icon-title">Inventory</span>
+        </div>
+        <div class="icon" data-icon-id="battle" data-window="battle">
+            <span class="icon-symbol">🪢</span>
+            <span class="icon-title">ByteBattles</span>
         </div>
     </div>
 
@@ -278,7 +353,8 @@
             <hr style="margin: 10px 0;">
             <p><strong>OS:</strong> WebOS v1.0</p>
             <p><strong>Status:</strong> Active</p>
-            <p style="margin-top: 10px;">Welcome to your desktop interface built using pure HTML, CSS, and JavaScript.</p>
+            <p style="margin-top: 10px;">Welcome to your desktop interface built using pure HTML, CSS, and JavaScript.
+            </p>
         </div>
     </div>
 
@@ -289,28 +365,55 @@
             <button class="close-btn" onclick="closeWindow('Byte-window')">×</button>
         </div>
         <div class="window-body b-body">
-            <iframe src="../Game.html" width="100%" height="300px" title="Embedded Content" style="border: none;"></iframe>
+            <iframe src="../Game.html" width="100%" height="300px" title="Embedded Content"
+                style="border: none;"></iframe>
         </div>
     </div>
 
-     <!-- DigitalScanner Window -->
+    <!-- Browser Window -->
+    <div id="Web-window" class="window" style="top: 100px; left: 250px;">
+        <div class="window-header">
+            <span class="window-title">Web Browser</span>
+            <button class="close-btn" onclick="closeWindow('Web-window')">×</button>
+        </div>
+        <div class="window-body b-body">
+            <iframe src="Browser.html" width="100%" height="600px" title="Embedded Content"
+                style="border: none;"></iframe>
+        </div>
+    </div>
+
+    <!-- Inventory Window (Added Missing Element) -->
+    <div id="Item-window" class="window" style="top: 100px; left: 250px;">
+        <div class="window-header">
+            <span class="window-title">Inventory</span>
+            <button class="close-btn" onclick="closeWindow('Item-window')">×</button>
+        </div>
+        <div class="window-body b-body">
+            <iframe src="item.html" width="100%" height="300px" title="Embedded Content" style="border: none;"></iframe>
+        </div>
+    </div>
+
+    <!-- DigitalScanner Window -->
     <div id="digital-window" class="window" style="top: 100px; left: 250px;">
         <div class="window-header">
             <span class="window-title">Scan the Digital world!!!</span>
             <button class="close-btn" onclick="closeWindow('digital-window')">×</button>
         </div>
         <div class="window-body b-body">
-            <iframe src="Adventure.html" width="100%" height="300px" title="Embedded Content" style="border: none;"></iframe>
+            <iframe src="Adventure.html" width="100%" height="300px" title="Embedded Content"
+                style="border: none;"></iframe>
         </div>
     </div>
 
-    <div id="Item-window" class="window" style="top: 100px; left: 250px;">
+    <!-- Battle Window -->
+    <div id="battle" class="window" style="top: 100px; left: 250px;">
         <div class="window-header">
-            <span class="window-title">digital enhancement viewer and user</span>
-            <button class="close-btn" onclick="closeWindow('Item-window')">×</button>
+            <span class="window-title">Battle</span>
+            <button class="close-btn" onclick="closeWindow('battle')">×</button>
         </div>
         <div class="window-body b-body">
-            <iframe src="item.html" width="100%" height="300px" title="Embedded Content" style="border: none;"></iframe>
+            <iframe src="BattleApp.html" width="100%" height="300px" title="Embedded Content"
+                style="border: none;"></iframe>
         </div>
     </div>
 
@@ -345,12 +448,34 @@
 
     <!-- Taskbar -->
     <div class="taskbar">
-        <button class="start-btn">Start</button>
+        <div class="start-container">
+            <button class="start-btn" id="startBtn" onclick="toggleStartMenu()">Start</button>
+            <div class="start-menu" id="startMenu">
+                <div class="start-menu-item" onclick="launchFromMenu('info-window')">ℹ️ Info</div>
+                <div class="start-menu-item" onclick="launchFromMenu('console-window')">💻 Console</div>
+                <div class="start-menu-item" onclick="launchFromMenu('Byte-window')">🅱️ Byte.exe</div>
+                <div class="start-menu-item" onclick="launchFromMenu('digital-window')">👾 DigitalScanner</div>
+                <div class="start-menu-item" onclick="launchFromMenu('Item-window')">🛄 Inventory</div>
+                <div class="start-menu-divider"></div>
+                <div class="start-menu-item" onclick="shutDown()">⏻ Shut Down</div>
+            </div>
+        </div>
+        <div class="taskbar-apps" id="taskbarApps"></div>
         <div class="clock" id="clock">00:00 AM</div>
     </div>
 
     <script>
         let highestZIndex = 10;
+
+        const windowTitles = {
+            'info-window': 'Info',
+            'console-window': 'Console',
+            'Byte-window': 'Byte.exe',
+            'digital-window': 'DigitalScanner',
+            'Item-window': 'Inventory',
+            'Web-window': 'Web Browser',
+            'battle': 'ByteBattles'
+        };
 
         // Open and Close Window Logic
         function openWindow(id) {
@@ -358,6 +483,7 @@
             if (win) {
                 win.style.display = 'flex';
                 bringToFront(win);
+                addTaskbarEntry(id);
             }
         }
 
@@ -366,12 +492,55 @@
             if (win) {
                 win.style.display = 'none';
             }
+            removeTaskbarEntry(id);
+        }
+
+        function toggleMinimize(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            if (win.style.display === 'none') {
+                win.style.display = 'flex';
+                bringToFront(win);
+            } else {
+                win.style.display = 'none';
+                setActiveTaskbarEntry(null);
+            }
         }
 
         // Bring focused window to the front
         function bringToFront(win) {
             highestZIndex++;
             win.style.zIndex = highestZIndex;
+            setActiveTaskbarEntry(win.id);
+        }
+
+        // Taskbar app entries
+        function addTaskbarEntry(id) {
+            const bar = document.getElementById('taskbarApps');
+            if (document.getElementById('taskbar-btn-' + id)) {
+                setActiveTaskbarEntry(id);
+                return;
+            }
+            const btn = document.createElement('button');
+            btn.className = 'taskbar-app-btn active';
+            btn.id = 'taskbar-btn-' + id;
+            btn.textContent = windowTitles[id] || id;
+            btn.onclick = () => toggleMinimize(id);
+            bar.appendChild(btn);
+            setActiveTaskbarEntry(id);
+        }
+
+        function removeTaskbarEntry(id) {
+            const btn = document.getElementById('taskbar-btn-' + id);
+            if (btn) btn.remove();
+        }
+
+        function setActiveTaskbarEntry(id) {
+            document.querySelectorAll('.taskbar-app-btn').forEach(b => b.classList.remove('active'));
+            if (id) {
+                const btn = document.getElementById('taskbar-btn-' + id);
+                if (btn) btn.classList.add('active');
+            }
         }
 
         // Add depth focus to windows when clicked anywhere inside
@@ -381,8 +550,7 @@
 
         // Window Dragging Logic
         document.querySelectorAll('.window-header').forEach(header => {
-            header.addEventListener('mousedown', function(e) {
-                // Prevent drag initialization when clicking the close button
+            header.addEventListener('mousedown', function (e) {
                 if (e.target.classList.contains('close-btn')) return;
 
                 const win = header.parentElement;
@@ -400,14 +568,109 @@
                     moveAt(event.pageX, event.pageY);
                 }
 
-                // Attach movement listener globally to avoid losing hold on fast movements
                 document.addEventListener('mousemove', onMouseMove);
 
-                document.onmouseup = function() {
+                document.onmouseup = function () {
                     document.removeEventListener('mousemove', onMouseMove);
                     document.onmouseup = null;
                 };
             });
+        });
+
+        // ---------- Draggable Desktop Icons ----------
+        const DEFAULT_ICON_POSITIONS = {
+            web: { top: 20, left: 20 },
+            info: { top: 120, left: 20 },
+            console: { top: 220, left: 20 },
+            byte: { top: 320, left: 20 },
+            scanner: { top: 420, left: 20 },
+            items: { top: 20, left: 120 },
+            battle: { top: 120, left: 120 }
+        };
+
+        function placeIcons() {
+            document.querySelectorAll('.icon').forEach(icon => {
+                const id = icon.dataset.iconId;
+                let pos = DEFAULT_ICON_POSITIONS[id] || { top: 20, left: 20 };
+                try {
+                    const saved = JSON.parse(localStorage.getItem('desktopIconPos:' + id));
+                    if (saved && typeof saved.top === 'number' && typeof saved.left === 'number') {
+                        pos = saved;
+                    }
+                } catch (e) { /* ignore corrupt data */ }
+                icon.style.top = pos.top + 'px';
+                icon.style.left = pos.left + 'px';
+            });
+        }
+        placeIcons();
+
+        document.querySelectorAll('.icon').forEach(icon => {
+            icon.addEventListener('mousedown', function (e) {
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const rect = icon.getBoundingClientRect();
+                const shiftX = e.clientX - rect.left;
+                const shiftY = e.clientY - rect.top;
+                let moved = false;
+
+                function onMouseMove(ev) {
+                    const dx = ev.clientX - startX;
+                    const dy = ev.clientY - startY;
+                    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+
+                    let newLeft = ev.pageX - shiftX;
+                    let newTop = ev.pageY - shiftY;
+                    newLeft = Math.max(0, Math.min(window.innerWidth - icon.offsetWidth, newLeft));
+                    newTop = Math.max(0, Math.min(window.innerHeight - 48 - icon.offsetHeight, newTop));
+                    icon.style.left = newLeft + 'px';
+                    icon.style.top = newTop + 'px';
+                }
+
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    if (moved) {
+                        localStorage.setItem('desktopIconPos:' + icon.dataset.iconId, JSON.stringify({
+                            top: parseInt(icon.style.top, 10),
+                            left: parseInt(icon.style.left, 10)
+                        }));
+                    } else {
+                        openWindow(icon.dataset.window);
+                    }
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        });
+
+        // ---------- Start Menu ----------
+        function toggleStartMenu() {
+            document.getElementById('startMenu').classList.toggle('open');
+            document.getElementById('startBtn').classList.toggle('open');
+        }
+
+        function launchFromMenu(id) {
+            openWindow(id);
+            document.getElementById('startMenu').classList.remove('open');
+            document.getElementById('startBtn').classList.remove('open');
+        }
+
+        function shutDown() {
+            document.getElementById('startMenu').classList.remove('open');
+            document.body.innerHTML =
+                '<div style="height:100vh;display:flex;align-items:center;justify-content:center;' +
+                'background:#000;color:#fff;font-family:\'Segoe UI\',Tahoma,sans-serif;font-size:1.3rem;">It is now safe to close this tab...</div>';
+            setTimeout(() => { window.location.href = 'console.html'; }, 1400);
+        }
+
+        document.addEventListener('mousedown', (e) => {
+            const menu = document.getElementById('startMenu');
+            const btn = document.getElementById('startBtn');
+            if (menu.classList.contains('open') && !menu.contains(e.target) && e.target !== btn) {
+                menu.classList.remove('open');
+                btn.classList.remove('open');
+            }
         });
 
         // Real-time Clock
@@ -420,7 +683,7 @@
 
         // Console Form Logic
         const form = document.getElementById('actionForm');
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             event.preventDefault();
 
             const command = document.getElementById('userInput').value.trim().toLowerCase();
@@ -432,8 +695,7 @@
                 openWindow('info-window');
             }
             else if (command === "web") {
-                document.body.style.backgroundColor = "#e0e0e0";
-                document.body.style.backgroundImage = "none";
+                openWindow('Web-window');
             }
             else if (command === "launch desktop") {
                 closeWindow('console-window');
@@ -444,9 +706,10 @@
             else {
                 alert("Unknown command: " + command);
             }
-            
+
             document.getElementById('userInput').value = "";
         });
     </script>
 </body>
+
 </html>

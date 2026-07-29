@@ -496,6 +496,8 @@
                 }
             ];
 
+            let myMonster = null;
+
             // ---------- Storage Functions ----------
             function load() {
                 const savedData = localStorage.getItem('ardumonGameData');
@@ -749,7 +751,7 @@
             }
 
             function processAttack(pid) {
-                if (!boss || boss.health <= 0) return;
+                if (!boss || boss.health <= 0 || !inRaid) return;
                 const p = players[pid];
                 if (!p || !p.alive) return;
 
@@ -758,6 +760,8 @@
                 boss.health = Math.max(0, boss.health - dmg);
                 log(p.name + "'s " + p.monster.name + ' hit the boss for ' + dmg + ' damage!');
                 animFlash = { player: pid, alpha: 1 };
+                triggerBossShake();
+                spawnDamagePopup(dmg, 'boss');
 
                 if (boss.health <= 0) {
                     log('The raid boss has been defeated! Victory!');
@@ -774,11 +778,292 @@
                     const defStat = target.monster.BattleStats ? target.monster.BattleStats.defense : 3;
                     const bossDmg = Math.max(1, boss.attack - defStat);
                     target.hp = Math.max(0, target.hp - bossDmg);
+                    spawnDamagePopup(bossDmg, 'party');
                     if (target.hp <= 0) {
                         target.alive = false;
+                        log(target.name + "'s " + target.monster.name + ' has been knocked out!');
+                    }
+                }
+
+                const stillAlive = Object.values(players).filter(pl => pl.alive);
+                if (stillAlive.length === 0) {
+                    log('The raid party has been wiped out...');
+                    broadcastState();
+                    broadcastEnd('lose');
+                    finishRaidVisual('lose');
+                    return;
+                }
+
+                broadcastState();
+            }
+
+            // ---------- UI: roster / boss panel ----------
+            function updateBossUI() {
+                if (!boss) return;
+                document.getElementById('bossPanel').style.display = 'flex';
+                document.getElementById('bossName').textContent = boss.name;
+                const ratio = Math.max(0, Math.min(1, boss.health / Math.max(1, boss.maxHealth)));
+                document.getElementById('bossHpBar').style.width = (ratio * 100) + '%';
+                document.getElementById('bossHpText').textContent = `HP: ${boss.health}/${boss.maxHealth}`;
+            }
+
+            function updateRosterUI() {
+                const roster = document.getElementById('roster');
+                roster.innerHTML = '';
+                Object.values(players).forEach(p => {
+                    const card = document.createElement('div');
+                    let cls = 'player-card';
+                    if (p.id === myId) cls += ' you';
+                    if (!p.alive) cls += ' down';
+                    if (animFlash.player === p.id && animFlash.alpha > 0) cls += ' hit';
+                    card.className = cls;
+                    const hpRatio = Math.max(0, Math.min(1, p.hp / Math.max(1, p.maxHp)));
+                    card.innerHTML = `
+                        <svg width="48" height="48" viewBox="0 0 24 24">${renderSprite(p.monster.spriteData)}</svg>
+                        <div class="pname">${p.name}</div>
+                        <div class="php">${p.monster.name} &middot; HP ${p.hp}/${p.maxHp}</div>
+                        <div class="hp-bar-outer"><div class="hp-bar-inner" style="width:${hpRatio * 100}%;"></div></div>
+                    `;
+                    roster.appendChild(card);
+                });
+            }
+
+            function enterRaidUI() {
+                document.getElementById('HostButton').style.display = 'none';
+                document.getElementById('JoinButton').style.display = 'none';
+                document.getElementById('AttackButton').style.display = 'inline-block';
+                document.getElementById('LeaveButton').style.display = 'inline-block';
+                document.getElementById('subheading').textContent = isHost
+                    ? 'Hosting a raid — share your room code with your team!'
+                    : 'Joined a raid — work together to take down the boss!';
+                updateBossUI();
+                updateRosterUI();
+            }
+
+            function resetToLobby() {
+                inRaid = false;
+                isHost = false;
+                boss = null;
+                players = {};
+                connections = {};
+                conn = null;
+                myId = null;
+                if (peer) { try { peer.destroy(); } catch (e) { } peer = null; }
+                document.getElementById('HostButton').style.display = 'inline-block';
+                document.getElementById('JoinButton').style.display = 'inline-block';
+                document.getElementById('AttackButton').style.display = 'none';
+                document.getElementById('LeaveButton').style.display = 'none';
+                document.getElementById('bossPanel').style.display = 'none';
+                document.getElementById('roomCodeBox').style.display = 'none';
+                document.getElementById('roster').innerHTML = '';
+                document.getElementById('subheading').textContent = 'Team up with up to 8 players to take down a raid boss';
+            }
+
+            // ---------- networking: broadcast (host) ----------
+            function broadcastState() {
+                if (!isHost) return;
+                updateBossUI();
+                updateRosterUI();
+                const payload = { type: 'state', boss, players };
+                Object.values(connections).forEach(c => { if (c && c.open) c.send(payload); });
+            }
+
+            function broadcastEnd(result) {
+                if (!isHost) return;
+                const payload = { type: 'end', result };
+                Object.values(connections).forEach(c => { if (c && c.open) c.send(payload); });
+            }
+
+            function finishRaidVisual(result) {
+                document.getElementById('AttackButton').style.display = 'none';
+                const img = result === 'win' ? winImg : LosImg;
+                img.style.display = 'block';
+                popIn(img);
+                setTimeout(() => {
+                    img.style.display = 'none';
+                    resetToLobby();
+                }, 3000);
+            }
+
+            // ---------- JOINING a raid ----------
+            async function joinRaid() {
+                if (inRaid) return;
+                const roomCode = await customPrompt('Enter the Raid Room Code from the host:');
+                if (!roomCode || !roomCode.trim()) {
+                    log('Join cancelled.');
+                    return;
+                }
+                const cleaned = roomCode.trim();
+                if (!cleaned.toUpperCase().startsWith('BYTERAID')) {
+                    customAlert('That does not look like a raid code. Double check it and try again.');
+                    return;
+                }
+
+                const playerName = await customPrompt('Enter a name for your raider:', 'Raider');
+
+                if (!myMonster) myMonster = pickRandomMon();
+                isHost = false;
+
+                if (peer) { try { peer.destroy(); } catch (e) { } }
+                peer = new Peer();
+
+                peer.on('open', (id) => {
+                    myId = id;
+                    conn = peer.connect(cleaned.toUpperCase());
+
+                    conn.on('open', () => {
+                        inRaid = true;
+                        conn.send({ type: 'join', name: (playerName && playerName.trim()) || 'Raider', monster: myMonster });
+                        log('Connected! Joining the raid...');
+                        enterRaidUI();
+                    });
+
+                    conn.on('data', (data) => {
+                        try { handleClientData(data); } catch (e) { console.error('Failed to handle raid data:', e); }
+                    });
+
+                    conn.on('close', () => {
+                        if (inRaid) {
+                            customAlert('Lost connection to the raid host.');
+                            resetToLobby();
+                        }
+                    });
+
+                    conn.on('error', (err) => {
+                        console.error('Connection error:', err);
+                        customAlert('Could not connect: ' + err.message);
+                    });
+                });
+
+                peer.on('error', (err) => {
+                    console.error('PeerJS error:', err);
+                    customAlert('Connection error: ' + err.message);
+                });
+            }
+
+            function handleClientData(data) {
+                if (!data) return;
+                if (data.type === 'full') {
+                    customAlert('That raid is already full (max ' + MAX_RAIDERS + ' players).');
+                    resetToLobby();
+                } else if (data.type === 'state') {
+                    boss = data.boss;
+                    players = data.players;
+                    updateBossUI();
+                    updateRosterUI();
+                } else if (data.type === 'end') {
+                    if (data.result === 'hostLeft') {
+                        customAlert('The host ended the raid.');
+                        resetToLobby();
+                    } else {
+                        finishRaidVisual(data.result);
                     }
                 }
             }
+
+            // ---------- shared actions ----------
+            function attackBoss() {
+                if (!inRaid || attackCooldown || !boss || boss.health <= 0) return;
+                attackCooldown = true;
+                const btn = document.getElementById('AttackButton');
+                if (btn) btn.disabled = true;
+                setTimeout(() => {
+                    attackCooldown = false;
+                    if (btn) btn.disabled = false;
+                }, 600);
+
+                if (isHost) {
+                    processAttack(myId);
+                } else if (conn && conn.open) {
+                    conn.send({ type: 'attack' });
+                }
+            }
+
+            function leaveRaid() {
+                if (!inRaid) { resetToLobby(); return; }
+                if (isHost) {
+                    Object.values(connections).forEach(c => {
+                        try { c.send({ type: 'end', result: 'hostLeft' }); c.close(); } catch (e) { }
+                    });
+                } else if (conn) {
+                    try { conn.send({ type: 'leave' }); conn.close(); } catch (e) { }
+                }
+                resetToLobby();
+            }
+
+            // ---------- rendering ----------
+            function resizeCanvas() {
+                const stage = canvas.parentElement;
+                if (!stage) return;
+                const ratio = window.devicePixelRatio || 1;
+                const width = stage.clientWidth || 500;
+                const height = stage.clientHeight || 300;
+                canvas.width = Math.round(width * ratio);
+                canvas.height = Math.round(height * ratio);
+                ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            }
+
+            function drawGameScene(timestamp = performance.now()) {
+                const width = canvas.clientWidth || 500;
+                const height = canvas.clientHeight || 300;
+                ctx.clearRect(0, 0, width, height);
+
+                if (!boss) {
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Host or join a raid to begin!', width / 2, height / 2);
+                    return;
+                }
+
+                let shakeX = 0, shakeY = 0;
+                if (timestamp < bossShakeUntil) {
+                    shakeX = (Math.random() - 0.5) * 2 * bossShakeMagnitude;
+                    shakeY = (Math.random() - 0.5) * 2 * bossShakeMagnitude;
+                }
+
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
+
+                const scale = Math.min(width, height) * 0.08;
+                const bounds = getSpriteBounds(boss.spriteData);
+                const spriteWidth = (bounds.maxX - bounds.minX) * scale;
+                const spriteHeight = (bounds.maxY - bounds.minY) * scale;
+                const spriteX = width / 2 - spriteWidth / 2 - bounds.minX * scale;
+                const spriteY = height / 2 - spriteHeight / 2 - bounds.minY * scale - 10;
+                ctx.translate(spriteX, spriteY);
+                drawSpriteToCanvas(boss.spriteData, 0, 0, scale);
+                ctx.restore();
+
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#1f2937';
+                ctx.fillText(boss.name, width / 2, height - 20);
+
+                damagePopups = damagePopups.filter(popup => timestamp - popup.startTime < 800);
+                damagePopups.forEach(popup => {
+                    const age = (timestamp - popup.startTime) / 800;
+                    const x = width / 2 + (popup.kind === 'party' ? 60 : -60) * age;
+                    const y = height / 2 - 30 - age * 26;
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, 1 - age);
+                    ctx.fillStyle = popup.kind === 'boss' ? '#dc2626' : '#f59e0b';
+                    ctx.font = 'bold 18px Arial';
+                    ctx.fillText(`-${popup.amount}`, x, y);
+                    ctx.restore();
+                });
+            }
+
+            function animateFrame(now) {
+                drawGameScene(now);
+                requestAnimationFrame(animateFrame);
+            }
+
+            window.addEventListener('load', () => {
+                resizeCanvas();
+                requestAnimationFrame(animateFrame);
+            });
+            window.addEventListener('resize', resizeCanvas);
         </script>
     </div>
 </body>

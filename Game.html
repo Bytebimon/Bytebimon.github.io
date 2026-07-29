@@ -537,14 +537,27 @@
             function initializeGame() {
                 updateGameState();
                 loadUpdates();
+                setInterval(loadUpdates, 10000);
             }
+
+            let lastUpdateSignature = null;
 
             async function loadUpdates() {
                 try {
-                    const response = await fetch('Update.json');
+                    const response = await fetch('Update.json', { cache: 'no-store' });
                     if (response.ok) {
-                        updateMon = await response.json();
-                        console.log("Update monsters loaded:", updateMon);
+                        const data = await response.json();
+                        const signature = JSON.stringify(data);
+                        if (signature !== lastUpdateSignature) {
+                            const isFirstLoad = lastUpdateSignature === null;
+                            lastUpdateSignature = signature;
+                            updateMon = data;
+                            console.log("Update monsters loaded:", updateMon);
+                            if (!isFirstLoad) {
+                                console.log("New update content detected and applied.");
+                                customAlert("New monsters have been added to the wild pool!");
+                            }
+                        }
                     }
                 } catch (e) {
                     console.warn("Could not load Update.json:", e);
@@ -691,6 +704,9 @@
                     maxPlayerHP = gameData.maxPlayerHP;
                     gamestate = gameData.gamestate;
                     inBattle = gameData.inBattle;
+                    if (currentmon && !requirements) {
+                        setEvolutionRequirements();
+                    }
                     console.log("Game loaded.");
                 }
             }
@@ -1385,8 +1401,21 @@
                 const chosenArray = (Math.random() < 0.5 && updateMon.length > 0) ? updateMon : BaseMon;
                 const randomIndex = Math.floor(Math.random() * chosenArray.length);
                 currentmon = JSON.parse(JSON.stringify(chosenArray[randomIndex]));
+                currentmon.evolved = currentmon.evolved || false;
+                setEvolutionRequirements();
                 console.log(`A wild ${currentmon.name} has appeared!`);
                 updateMonsterDisplay();
+            }
+
+            function setEvolutionRequirements() {
+                if (!currentmon || !currentmon.BattleStats) {
+                    requirements = null;
+                    return;
+                }
+                requirements = {
+                    attack: Math.ceil(currentmon.BattleStats.attack * 1.5),
+                    defense: Math.ceil(currentmon.BattleStats.defense * 1.5)
+                };
             }
 
             function FeedButton() {
@@ -1443,6 +1472,9 @@
                 hideTrainButtons();
                 gamestate = "idle";
                 updateGameState();
+                if (stats.attack >= 11) {
+                    stats.attack = 10;
+                }
                 if (currentmon && currentmon.BattleStats && currentmon.BattleStats.attack >= 11) {
                     currentmon.BattleStats.attack = 10;
                     customAlert("attack is max");
@@ -1464,6 +1496,9 @@
                 if (stats.defense >= 11) {
                     stats.defense = 10;
                     customAlert("Defense is max");
+                }
+                if (currentmon && currentmon.BattleStats && currentmon.BattleStats.defense >= 11) {
+                    currentmon.BattleStats.defense = 10;
                 }
             }
 
@@ -1840,10 +1875,10 @@
             }
 
             function Evolve() {
-                if (currentmon && requirements) {
-                    if (timer >= currentmon.evoTime) {
+                if (currentmon && requirements && !currentmon.evolved) {
+                    if (timer >= (currentmon.evoTime || 120)) {
                         if (stats.attack >= (requirements.attack || 0) && stats.defense >= (requirements.defense || 0)) {
-                            console.log("Evolving", currentmon.name);
+                            performEvolution();
                         } else {
                             console.log("Requirements not met for evolution.");
                         }
@@ -1851,6 +1886,34 @@
                         console.log("Not enough time has passed to evolve.");
                     }
                 }
+            }
+
+            function performEvolution() {
+                const previousName = currentmon.name;
+                currentmon.evolved = true;
+                currentmon.name = "Mega " + currentmon.name;
+
+                if (currentmon.BattleStats) {
+                    currentmon.BattleStats.attack = Math.round(currentmon.BattleStats.attack * 1.4);
+                    currentmon.BattleStats.defense = Math.round(currentmon.BattleStats.defense * 1.4);
+                    currentmon.BattleStats.health = Math.round(currentmon.BattleStats.health * 1.4);
+                    currentmon.BattleStats.speed = Math.round((currentmon.BattleStats.speed || 1) * 1.2);
+                }
+
+                // Add a golden aura ring behind the sprite so evolved monsters look distinct
+                if (currentmon.spriteData) {
+                    currentmon.spriteData = [
+                        { type: "ellipse", cx: 12, cy: 12, rx: 11, ry: 10, fill: "rgba(250, 204, 21, 0.35)" },
+                        ...currentmon.spriteData
+                    ];
+                }
+
+                health = Math.min(20, health + 5);
+                console.log(`${previousName} evolved into ${currentmon.name}!`);
+                customAlert(`Incredible! ${previousName} is evolving into ${currentmon.name}!`);
+                triggerAnimation('bounce', 500);
+                updateMonsterDisplay();
+                showMonster();
             }
 
             function hideButtons() {

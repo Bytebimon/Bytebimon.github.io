@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SYSTEM BREACH DETECTED</title>
+    <style>
+        :root {
+            --bg: #020202;
+            --primary: #00ff00;
+            --accent: #ff0033;
+            --text: #33ff33;
+            --glass: rgba(0, 20, 0, 0.65);
+            --green: #00ff00;
+            --red: #ff0033;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #0a110a, #000000);
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--text);
+            text-shadow: 0 0 4px rgba(51, 255, 51, 0.5);
+        }
+
+        .alert-banner {
+            color: var(--accent);
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px var(--accent);
+            animation: glitch-blink 0.8s infinite;
+        }
+
+        @keyframes glitch-blink {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            25% {
+                opacity: 0.8;
+                transform: translateX(-2px);
+            }
+
+            50% {
+                opacity: 0.2;
+                transform: translateX(2px);
+            }
+
+            75% {
+                opacity: 0.9;
+                transform: translateX(0);
+            }
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2), inset 0 0 15px rgba(0, 255, 0, 0.1);
+            border-radius: 5px;
+            padding: 30px;
+            width: 420px;
+            text-align: center;
+            position: relative;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 0, 0.05) 2px,
+                    rgba(0, 255, 0, 0.05) 4px);
+            pointer-events: none;
+            border-radius: 5px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            border-bottom: 1px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        .timer-bar {
+            position: relative;
+            height: 30px;
+            background: #111;
+            border: 1px solid var(--red);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 25px 0;
+            box-shadow: 0 0 10px rgba(255, 0, 51, 0.4);
+        }
+
+        .timer-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--red);
+            transition: width 0s linear;
+        }
+
+        .green-zone {
+            position: absolute;
+            left: 40%;
+            width: 20%;
+            height: 100%;
+            background: rgba(0, 255, 0, 0.5);
+            border-left: 2px solid var(--green);
+            border-right: 2px solid var(--green);
+            z-index: 2;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 0.95rem;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 1px solid #333;
+        }
+
+        .back {
+            margin-top: 25px;
+            display: inline-block;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .back:hover {
+            color: #fff;
+            text-shadow: 0 0 8px #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="alert-banner">⚠ WARNING: YOU ARE BEING HACKED ⚠</div>
+    <div class="card">
+        <h1>DEFENSIVE PROTOCOL</h1>
+        <p>MALWARE DETECTED. Press <strong>SPACE</strong> when the corrupted node is in the secure zone to purge the
+            virus.</p>
+
+        <div class="timer-bar">
+            <div class="green-zone"></div>
+            <div class="timer-progress" id="progress"></div>
+        </div>
+
+        <p id="msg"></p>
+
+        <div class="stats" id="stats"></div>
+
+        <a href="../Browser.html" class="back">← Abort & Return</a>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------------------
+        // Load or initialise player stats (stored in localStorage)
+        // ---------------------------------------------------------------------
+        const defaultStats = { attack: 10, defense: 10, speed: 10, health: 30 };
+        let playerStats = (() => {
+            try {
+                const stored = localStorage.getItem('playerStats');
+                return stored ? JSON.parse(stored) : { ...defaultStats };
+            } catch (e) { return { ...defaultStats }; }
+        })();
+
+        const statsEl = document.getElementById('stats');
+        const updateStatsUI = () => {
+            statsEl.innerHTML = `> SYS_ATTACK : ${playerStats.attack}<br>> SYS_DEFENSE: ${playerStats.defense}<br>> SYS_SPEED  : ${playerStats.speed}<br>> CORE_HEALTH: ${playerStats.health}`;
+        };
+        updateStatsUI();
+
+        // ---------------------------------------------------------------------
+        // Slider animation – bar sweeps left‑to‑right and back continuously.
+        // ---------------------------------------------------------------------
+        const progressBar = document.getElementById('progress');
+        const msgEl = document.getElementById('msg');
+        const GREEN_START = 0.40; // 40% width
+        const GREEN_END = 0.60;   // 60% width
+        const DURATION = 1200;    // ms for one-way sweep (sped up for intensity)
+        let direction = 1; // 1 = forward, -1 = backward
+        let startTime = null;
+        let animId = null;
+
+        const animate = (timestamp) => {
+            if (!startTime) startTime = timestamp;
+            const elapsed = timestamp - startTime;
+            let progress = elapsed / DURATION; // 0‑1
+
+            if (progress > 1) {
+                direction *= -1; // reverse direction
+                startTime = timestamp;
+                progress = 0;
+            }
+
+            const percent = direction === 1 ? progress * 100 : (1 - progress) * 100;
+            progressBar.style.width = percent + '%';
+            animId = requestAnimationFrame(animate);
+        };
+        animId = requestAnimationFrame(animate);
+
+        // ---------------------------------------------------------------------
+        // Space‑key handling – penalise when outside the green zone.
+        // ---------------------------------------------------------------------
+        const isInGreen = (percent) => {
+            const ratio = percent / 100;
+            return ratio >= GREEN_START && ratio <= GREEN_END;
+        };
+
+        const penalise = () => {
+            const keys = ['attack', 'defense', 'speed', 'health'];
+            keys.forEach(k => {
+                playerStats[k] = Math.max(0, playerStats[k] - 2);
+            });
+            updateStatsUI();
+            localStorage.setItem('playerStats', JSON.stringify(playerStats));
+        };
+
+        const handleSpace = (e) => {
+            if (e.code !== 'Space') return;
+            const width = parseFloat(progressBar.style.width);
+
+            if (isInGreen(width)) {
+                msgEl.textContent = '[ SUCCESS: MALWARE PURGED ]';
+                msgEl.style.color = 'var(--green)';
+                // Fixed spelling of window.location
+                setTimeout(() => {
+                    window.location.href = "../Browser.html";
+                }, 800);
+            } else {
+                msgEl.textContent = '[ ERROR: DATA CORRUPTED. STATS DRAINED! ]';
+                msgEl.style.color = 'var(--red)';
+                penalise();
+            }
+
+            setTimeout(() => { msgEl.textContent = ''; }, 1500);
+        };
+        window.addEventListener('keydown', handleSpace);
+    </script>
+</body>
+
+</html>
