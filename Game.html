@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bytebimon</title>
+    <link rel="icon" type="image/png" href="/Assets/Icon.png">
+
+    
+    <!-- External Scripts -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7329195604411751"
+     crossorigin="anonymous"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #000000, #0d5f04);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .game-shell {
+            width: min(100%, 560px);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .ui-panel {
+            width: 100%;
+            max-width: 480px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            text-align: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .game-stage {
+            width: min(100%, 420px);
+            aspect-ratio: 5 / 4;
+            border: 2px solid #333;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #000000 0%, #013c166c 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .action-buttons button {
+            margin-right: 8px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        @keyframes shakeStage {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 3px); }
+            40% { transform: translate(5px, -4px); }
+            60% { transform: translate(-4px, -2px); }
+            80% { transform: translate(3px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .game-stage.shake {
+            animation: shakeStage 0.35s ease-in-out;
+        }
+
+        @keyframes popInKeyframes {
+            0% { transform: scale(0.4); opacity: 0; }
+            60% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pop-in {
+            animation: popInKeyframes 0.4s ease-out;
+        }
+
+        @keyframes buttonAppear {
+            0% { transform: translateY(6px) scale(0.9); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .action-buttons button {
+            animation: buttonAppear 0.25s ease-out;
+        }
+
+        .monster-placeholder {
+            display: none !important;
+        }
+
+        .monster-placeholder svg {
+            display: block;
+            margin: 0 auto 8px;
+        }
+
+        .battle-arena {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 40px;
+        }
+
+        .player-monster {
+            flex: 1;
+            text-align: center;
+        }
+
+        .enemy-monster {
+            flex: 1;
+            text-align: center;
+        }
+    </style>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<nav>
+    <a href="Game.html">Game</a> |
+    <a href="RaidHost.html">Raids</a> |
+    <a href="about.html">About Me</a> |
+    <a href="contact.html">Contact</a> |
+    <a href="index.html">Home</a> |
+    <a href="Download.html">Download</a>
+</nav>
+
+<body>
+    <div class="game-shell">
+        <div class="ui-panel">
+            <h1>Bytebimon</h1>
+            <div class="action-buttons">
+                <button id="MenuButton" onclick="menu()">Menu</button>
+                <button id="HostButton" onclick="hostMatch()" style="display: none;">Host Game</button>
+                <button id="JoinButton" onclick="joinMatch()" style="display: none;">Join Game</button>
+                <button id="RaidsButton" onclick="goToRaids()" style="display: none;">Raids (co-op)</button>
+                <button id="SaveButton" onclick="save()">Save</button>
+                <button id="feedButton" onclick="FeedButton()">Feed</button>
+                <button id="sleepButton" onclick="SleepButton()">Sleep</button>
+                <button id="trainButton" onclick="TrainButton()">Train</button>
+                <button id="battleButton" onclick="battle()">Battle</button>
+                <button id="StartButton" onclick="StartGame()" style="display: inline-block;">Get_Byte</button>
+                <button id="onlineBattleButton" onclick="onlineBattle()" style="display: none;">Online Battle</button>
+                <button id="localBattleButton" onclick="localBattle()" style="display: none;">Local Battle</button>
+                <button id="settingsButton" onclick="settings()" style="display: none;">Settings</button>
+                <button id="volumeButton" onclick="volume()" style="display: none;">Volume</button>
+                <button id="updateButton" onclick="update()" style="display: none;">Update</button>
+                <button id="AttackButton" onclick="Attack()" style="display: none;">Attack</button>
+                <button id="NextButton" onclick="Next()" style="display: none;">Next</button>
+                <button id="restartButton" onclick="restart()" style="display: none;">Restart</button>
+                <button id="TrainDefenseButton" onclick="TdefenseButton()" style="display: none;">Train Defense</button>
+                <button id="TrainAttackButton" onclick="TattackButton()" style="display: none;">Train Attack</button>
+                <button id="TrainSpatialButton" onclick="TspatialButton()" style="display: none;">Train Spatial</button>
+                <button id="backButton" onclick="Back()" style="display: none;">Back</button>
+            </div>
+        </div>
+        <img id="Lose-image" src="Assets/lose.svg" alt="Lose-Image" style="display:none;">
+        <img id="win-image" src="Assets/won.svg" alt="Win-Image" style="display:none;">
+        <div class="game-stage">
+            <canvas id="myCanvas" width="500" height="400"></canvas>
+        </div>
+
+        <div id="monsterPlaceholder" class="monster-placeholder player-monster" style="display: none;" aria-live="polite">
+            <svg width="96" height="96" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#Mon"></use>
+            </svg>
+            <div id="monsterLabel">Ardumon placeholder</div>
+        </div>
+
+        <div id="enemyMonsterPlaceholder" class="monster-placeholder enemy-monster" style="display: none;" aria-live="polite">
+            <svg width="96" height="96" viewBox="0 0 24 24" aria-hidden="true">
+                <use href="#Mon"></use>
+            </svg>
+            <div id="enemyMonsterLabel">Enemy Ardumon</div>
+        </div>
+
+        <div id="customDialogOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
+            <div style="background:rgb(255, 251, 251); padding:20px; border-radius:10px; text-align:center; min-width:300px; max-width:80%; font-family:Arial; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <p id="customDialogMsg" style="color:black; margin-bottom:15px; font-size:18px;"></p>
+                <input type="text" id="customDialogInput" style="display:none; margin-bottom:15px; width:100%; padding:10px; font-size:16px; border:1px solid #ccc; border-radius:5px;">
+                <div style="display:flex; justify-content:center; gap:10px;">
+                    <button id="customDialogOk" style="background:#5aa708ce; color:rgb(225, 148, 148); border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">OK</button>
+                    <button id="customDialogCancel" style="display:none; background:#f59a9a; color:black; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:16px;">Cancel</button>
+                </div>
+            </div>
+        </div>
+<a href="howtoplay.html" class="button-link"> How to play </a>
+        <script>
+            window.customAlert = function (msg) {
+                return new Promise(resolve => {
+                    document.getElementById('customDialogOverlay').style.display = 'flex';
+                    document.getElementById('customDialogMsg').innerText = msg;
+                    document.getElementById('customDialogInput').style.display = 'none';
+                    document.getElementById('customDialogCancel').style.display = 'none';
+
+                    const okBtn = document.getElementById('customDialogOk');
+                    okBtn.onclick = function () {
+                        document.getElementById('customDialogOverlay').style.display = 'none';
+                        resolve();
+                    };
+                });
+            };
+
+            window.customPrompt = function (msg, defaultVal) {
+                return new Promise(resolve => {
+                    document.getElementById('customDialogOverlay').style.display = 'flex';
+                    document.getElementById('customDialogMsg').innerText = msg;
+                    const input = document.getElementById('customDialogInput');
+                    input.style.display = 'block';
+                    input.value = defaultVal || '';
+                    document.getElementById('customDialogCancel').style.display = 'inline-block';
+
+                    const okBtn = document.getElementById('customDialogOk');
+                    okBtn.onclick = function () {
+                        document.getElementById('customDialogOverlay').style.display = 'none';
+                        resolve(input.value);
+                    };
+
+                    const cancelBtn = document.getElementById('customDialogCancel');
+                    cancelBtn.onclick = function () {
+                        document.getElementById('customDialogOverlay').style.display = 'none';
+                        resolve(null);
+                    };
+                });
+            };
+
+            const canvas = document.getElementById('myCanvas');
+            const ctx = canvas.getContext('2d');
+
+            let hunger = 20;
+            let stats = { attack: 0, defense: 0 };
+            let health = 10;
+            let defence = 0;
+            let currentmon = null;
+            let mute = false;
+            let timer = 0;
+            let requirements = null;
+            let Enemymon = null;
+            let turn = "";
+            let playerBattleHealth = 0;
+            let enemyBattleHealth = 0;
+            let currentHP = 0;
+            let maxPlayerHP = 0;
+            let updateMon = [];
+            let peer = null;
+            let conn = null;
+            let timerInterval = null;
+            let isHost = false;
+            let isOnlineBattle = false;
+            let EvoCheck = 0;
+            let effort = 0;
+
+            let gamestate = "TitleScreen";
+            let inBattle = false;
+            let currentVersion;
+            const delay = ms => new Promise(res => setTimeout(res, ms));
+            let animationState = { type: 'idle', startTime: performance.now(), duration: 700, actor: 'player' };
+            let damagePopups = [];
+            let shakeUntil = 0;
+            let shakeMagnitude = 0;
+
+            // Bar dimensions and positions
+            let barX = 100;
+            let barY = 320;
+            let barWidth = 300;
+            let barHeight = 25;
+
+            // Sweet spot bounds (x-offset and width)
+            let targetX = 225;
+            let targetWidth = 50;
+
+            // Indicator position and physics
+            let needleX = barX;
+            let needleSpeed = 5;
+            let movingRight = true;
+
+            // Game state variables
+            let timingState = "PLAYING"; // "PLAYING", "SUCCESS", or "MISS"
+            let scoreText = "";
+
+            // ==========================================
+            // SPATIAL AVOIDANCE MINIGAME CONFIG & STATE
+            // ==========================================
+            const SPATIAL_CONFIG = {
+                WIN_SCORE: 10,
+                MAX_HEALTH: 3,
+                PLAYER_SPEED: 5,
+                HAZARD_SPEED: 3
+            };
+
+            let spatialGameState = "MENU"; // MENU, TRAINING, VICTORY, GAME_OVER
+            let spatialScore = 0;
+            let spatialHealth = SPATIAL_CONFIG.MAX_HEALTH;
+            let spatialPlayer = { x: 250, y: 320, r: 16 };
+            let spatialTarget = { x: 0, y: 0, r: 12 };
+            let spatialHazards = [];
+            let activeKeys = {};
+
+            function triggerAnimation(type, duration = 600, actor = 'player') {
+                animationState = { type, startTime: performance.now(), duration, actor };
+            }
+
+            function spawnDamagePopup(amount, side) {
+                damagePopups.push({ amount, side, startTime: performance.now() });
+            }
+
+            function triggerShake(duration = 300, magnitude = 6) {
+                shakeUntil = performance.now() + duration;
+                shakeMagnitude = magnitude;
+                const stage = document.querySelector('.game-stage');
+                if (stage) {
+                    stage.classList.remove('shake');
+                    void stage.offsetWidth;
+                    stage.classList.add('shake');
+                    setTimeout(() => stage.classList.remove('shake'), duration);
+                }
+            }
+
+            function popIn(el) {
+                if (!el) return;
+                el.classList.remove('pop-in');
+                void el.offsetWidth;
+                el.classList.add('pop-in');
+            }
+
+            function animateFrame(now) {
+                drawGameScene(now);
+                requestAnimationFrame(animateFrame);
+            }
+
+            const winImg = document.getElementById("win-image");
+            const LosImg = document.getElementById("Lose-image");
+
+            const BaseMon = [
+                {
+                    id: 0,
+                    name: "corumon",
+                    type: "unknown",
+                    BattleStats: { attack: 5, defense: 3, speed: 2, health: 10 },
+                    evoTime: 120,
+                    spriteData: [
+                        { type: "ellipse", cx: 12, cy: 15, rx: 7, ry: 6, fill: "#4F6CF3" },
+                        { type: "ellipse", cx: 12, cy: 12, rx: 5.2, ry: 4.4, fill: "#6A8BFF" },
+                        { type: "ellipse", cx: 9.5, cy: 10.8, rx: 1.2, ry: 1.4, fill: "#0F172A" },
+                        { type: "ellipse", cx: 14.5, cy: 10.8, rx: 1.2, ry: 1.4, fill: "#0F172A" },
+                        { type: "polygon", points: "10,8 8,5 12,6", fill: "#2D4CC8" },
+                        { type: "polygon", points: "14,8 16,5 12,6", fill: "#2D4CC8" },
+                        { type: "rect", x: 9, y: 14, width: 6, height: 3, fill: "#1D4ED8" },
+                        { type: "ellipse", cx: 12, cy: 15.2, rx: 6.2, ry: 1.6, fill: "rgba(15, 23, 42, 0.18)" }
+                    ]
+                },
+                {
+                    id: 1,
+                    name: "flamemon",
+                    type: "fire",
+                    BattleStats: { attack: 7, defense: 4, speed: 3, health: 12 },
+                    evoTime: 180,
+                    spriteData: [
+                        { type: "ellipse", cx: 12, cy: 13.5, rx: 6.5, ry: 5.6, fill: "#FF6B35" },
+                        { type: "ellipse", cx: 12, cy: 11.4, rx: 4.5, ry: 3.8, fill: "#FF8C42" },
+                        { type: "polygon", points: "11,7 12,3 13,7", fill: "#FFD166" },
+                        { type: "polygon", points: "8.8,9.5 6.2,6.5 8.5,7.8", fill: "#FFB703" },
+                        { type: "polygon", points: "15.2,9.5 17.8,6.5 15.5,7.8", fill: "#FFB703" },
+                        { type: "rect", x: 8.5, y: 14.4, width: 7, height: 4, fill: "#C2410C" },
+                        { type: "polygon", points: "10,14 9,18 11,16", fill: "#F59E0B" },
+                        { type: "ellipse", cx: 12, cy: 15.4, rx: 6.4, ry: 1.4, fill: "rgba(120, 53, 15, 0.2)" }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: "aqmon",
+                    type: "water",
+                    BattleStats: { attack: 6, defense: 5, speed: 2, health: 14 },
+                    evoTime: 120,
+                    spriteData: [
+                        { type: "ellipse", cx: 12, cy: 12.5, rx: 6.5, ry: 5.6, fill: "#2DD4BF" },
+                        { type: "ellipse", cx: 12, cy: 11.4, rx: 4.6, ry: 4, fill: "#38BDF8" },
+                        { type: "polygon", points: "8,10 10,6 12,10 14,6 16,10", fill: "#0EA5E9" },
+                        { type: "rect", x: 10.4, y: 13.6, width: 3.2, height: 3.8, fill: "#1D4ED8" },
+                        { type: "ellipse", cx: 10.2, cy: 10.8, rx: 1, ry: 1.2, fill: "#0F172A" },
+                        { type: "ellipse", cx: 13.8, cy: 10.8, rx: 1, ry: 1.2, fill: "#0F172A" },
+                        { type: "ellipse", cx: 12, cy: 15, rx: 6.2, ry: 1.3, fill: "rgba(15, 23, 42, 0.18)" }
+                    ]
+                },
+                {
+                    id: 3,
+                    name: "Cellulage",
+                    type: "unknown",
+                    BattleStats: { attack: 6, defense: 4, speed: 2, health: 10 },
+                    evoTime: 120,
+                    spriteData: [
+                        { type: "ellipse", cx: 12.2, cy: 13.2, rx: 6.2, ry: 5.8, fill: "#7DD3A8" },
+                        { type: "ellipse", cx: 12, cy: 11.8, rx: 4.8, ry: 4.4, fill: "#A7F3D0" },
+                        { type: "rect", x: 9.5, y: 13.4, width: 5.2, height: 3.2, fill: "#3B82F6" },
+                        { type: "ellipse", cx: 10.2, cy: 10.6, rx: 1, ry: 1.1, fill: "#0F172A" },
+                        { type: "ellipse", cx: 13.8, cy: 10.6, rx: 1, ry: 1.1, fill: "#0F172A" },
+                        { type: "polygon", points: "8.2,9 6,6.5 8.8,7.4", fill: "#22C55E" },
+                        { type: "polygon", points: "15.8,9 19,6.5 15.2,7.4", fill: "#22C55E" },
+                        { type: "ellipse", cx: 10.8, cy: 15.4, rx: 2.4, ry: 1.2, fill: "rgba(34, 197, 94, 0.3)" }
+                    ]
+                },
+                {
+                    id: 4,
+                    name: "Pana-Brown",
+                    type: "grass",
+                    BattleStats: { attack: 7, defense: 5, speed: 3, health: 11 },
+                    evoTime: 180,
+                    spriteData: [
+                        { type: "ellipse", cx: 12, cy: 13.2, rx: 6.6, ry: 5.8, fill: "#A16207" },
+                        { type: "ellipse", cx: 12, cy: 11.6, rx: 4.8, ry: 4.2, fill: "#CA8A04" },
+                        { type: "polygon", points: "8,10 10,6 12,10 14,6 16,10", fill: "#4D7C0F" },
+                        { type: "rect", x: 9.6, y: 14.2, width: 4.8, height: 3.4, fill: "#7C2D12" },
+                        { type: "polygon", points: "8.4,10.2 6.8,7 9.2,8.4", fill: "#65A30D" },
+                        { type: "polygon", points: "15.6,10.2 17.2,7 14.8,8.4", fill: "#65A30D" },
+                        { type: "ellipse", cx: 12, cy: 15.4, rx: 6.2, ry: 1.3, fill: "rgba(82, 56, 27, 0.2)" }
+                    ]
+                },
+                {
+                    id: 5,
+                    name: "Rotoise",
+                    type: "water",
+                    BattleStats: { attack: 6, defense: 6, speed: 2, health: 13 },
+                    evoTime: 160,
+                    spriteData: [
+                        { type: "ellipse", cx: 12, cy: 12.6, rx: 7.2, ry: 6.2, fill: "#4CAF50" },
+                        { type: "ellipse", cx: 12, cy: 11.2, rx: 5.6, ry: 4.8, fill: "#8BC34A" },
+                        { type: "rect", x: 7.8, y: 8.8, width: 8.4, height: 6.2, fill: "#2E7D32" },
+                        { type: "rect", x: 8.4, y: 10.4, width: 7.2, height: 2.6, fill: "#66BB6A" },
+                        { type: "rect", x: 9.4, y: 14.2, width: 5.2, height: 3.2, fill: "#5D4037" },
+                        { type: "rect", x: 9.2, y: 8.2, width: 1.2, height: 2.2, fill: "#1B5E20" },
+                        { type: "rect", x: 13.6, y: 8.2, width: 1.2, height: 2.2, fill: "#1B5E20" },
+                        { type: "ellipse", cx: 12, cy: 15.2, rx: 7, ry: 1.4, fill: "rgba(46, 125, 50, 0.2)" }
+                    ]
+                },
+                {
+                    id: 6,
+                    name: "Holoni",
+                    type: "light",
+                    BattleStats: { attack: 8, defense: 5, speed: 4, health: 12 },
+                    evoTime: 220,
+                    spriteData: [
+                        { type: "ellipse", cx: 12, cy: 12.2, rx: 6.8, ry: 5.8, fill: "#00BCD4" },
+                        { type: "ellipse", cx: 12, cy: 11.2, rx: 4.8, ry: 4.2, fill: "#4DD0E1" },
+                        { type: "polygon", points: "8.8,8.4 10.4,4.2 12,8.4 13.6,4.2 15.2,8.4", fill: "#FDE68A" },
+                        { type: "polygon", points: "8.8,9.2 6.8,7 8.2,7.8", fill: "#F59E0B" },
+                        { type: "polygon", points: "15.2,9.2 17.2,7 15.8,7.8", fill: "#F59E0B" },
+                        { type: "rect", x: 9.2, y: 14.1, width: 5.6, height: 3.6, fill: "#3F51B5" },
+                        { type: "ellipse", cx: 12, cy: 15.2, rx: 6.8, ry: 1.4, fill: "rgba(15, 23, 42, 0.16)" }
+                    ]
+                },
+                {
+                    id: 7,
+                    name: "C-star",
+                    type: "electric",
+                    BattleStats: { attack: 7, defense: 4, speed: 5, health: 11 },
+                    evoTime: 240,
+                    spriteData: [
+                        { type: "polygon", points: "12,3.2 14.4,9.4 20.2,9.4 15.6,13.2 17.4,19.2 12,15.2 6.6,19.2 8.4,13.2 3.8,9.4 9.6,9.4", fill: "#FACC15" },
+                        { type: "ellipse", cx: 12, cy: 10.8, rx: 3.3, ry: 3.5, fill: "#FDE68A" },
+                        { type: "ellipse", cx: 12, cy: 10.2, rx: 2.2, ry: 2.3, fill: "#FB923C" },
+                        { type: "rect", x: 10.4, y: 14.2, width: 3.2, height: 3.8, fill: "#CA8A04" },
+                        { type: "ellipse", cx: 12, cy: 15.2, rx: 6.4, ry: 1.3, fill: "rgba(202, 138, 4, 0.22)" }
+                    ]
+                },
+                {
+                    id: 8,
+                    name: "Cyber-Moth",
+                    type: "bug",
+                    BattleStats: { attack: 8, defense: 3, speed: 6, health: 10 },
+                    evoTime: 200,
+                    spriteData: [
+                        { type: "polygon", points: "8.4,8.8 4.4,4.6 2.6,8.8", fill: "#8B5CF6" },
+                        { type: "polygon", points: "15.6,8.8 19.6,4.6 21.4,8.8", fill: "#8B5CF6" },
+                        { type: "ellipse", cx: 12, cy: 10.8, rx: 3.7, ry: 3.3, fill: "#E9D5FF" },
+                        { type: "ellipse", cx: 12, cy: 10.8, rx: 2.4, ry: 2.1, fill: "#C084FC" },
+                        { type: "rect", x: 10.2, y: 13.8, width: 3.6, height: 3.8, fill: "#475569" },
+                        { type: "polygon", points: "10.8,8.2 9.2,5.6 11.4,6.8", fill: "#F8FAFC" },
+                        { type: "polygon", points: "13.2,8.2 14.8,5.6 12.6,6.8", fill: "#F8FAFC" },
+                        { type: "ellipse", cx: 12, cy: 15.4, rx: 6.2, ry: 1.3, fill: "rgba(71, 85, 105, 0.22)" }
+                    ]
+                },
+                {
+                    id: 9,
+                    name: "DreGargle",
+                    type: "dark",
+                    BattleStats: { attack: 9, defense: 6, speed: 3, health: 14 },
+                    evoTime: 260,
+                    spriteData: [
+                        { type: "rect", x: 8.8, y: 6.8, width: 8.4, height: 8.8, fill: "#3E2723" },
+                        { type: "ellipse", cx: 12, cy: 10.6, rx: 4.4, ry: 4.2, fill: "#5D4037" },
+                        { type: "polygon", points: "8.4,6.8 5.8,2.6 10.2,2.6", fill: "#B71C1C" },
+                        { type: "polygon", points: "15.6,6.8 18.2,2.6 13.8,2.6", fill: "#B71C1C" },
+                        { type: "rect", x: 10.2, y: 14.2, width: 3.6, height: 3.6, fill: "#5D4037" },
+                        { type: "ellipse", cx: 10.2, cy: 9.8, rx: 1, ry: 1.2, fill: "#F5F5F5" },
+                        { type: "ellipse", cx: 13.8, cy: 9.8, rx: 1, ry: 1.2, fill: "#F5F5F5" },
+                        { type: "ellipse", cx: 12, cy: 15.4, rx: 6.8, ry: 1.4, fill: "rgba(62, 39, 35, 0.24)" }
+                    ]
+                }
+            ];
+
+            function initializeGame() {
+                updateGameState();
+                loadUpdates();
+                setInterval(loadUpdates, 10000);
+            }
+
+            let lastUpdateSignature = null;
+
+            async function loadUpdates() {
+                try {
+                    const response = await fetch('Update.json', { cache: 'no-store' });
+                    if (response.ok) {
+                        const data = await response.json();
+                        const signature = JSON.stringify(data);
+                        if (signature !== lastUpdateSignature) {
+                            const isFirstLoad = lastUpdateSignature === null;
+                            lastUpdateSignature = signature;
+                            updateMon = data;
+                            console.log("Update monsters loaded:", updateMon);
+                            if (!isFirstLoad) {
+                                console.log("New update content detected and applied.");
+                                customAlert("New monsters have been added to the wild pool!");
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Could not load Update.json:", e);
+                }
+            }
+
+            function restart() {
+                const gameData = {
+                    hunger: 20,
+                    stats: { attack: 0, defense: 0 },
+                    health: 10,
+                    currentmon: null,
+                    mute: false,
+                    timer: 0,
+                    requirements: null,
+                    Enemymon: null,
+                    turn: "",
+                    playerBattleHealth: 0,
+                    enemyBattleHealth: 0,
+                    currentHP: 0,
+                    maxPlayerHP: 0,
+                    gamestate: "TitleScreen",
+                    inBattle: false
+                };
+                localStorage.setItem('ardumonGameData', JSON.stringify(gameData));
+                console.log("Game reset.");
+                load();
+                updateGameState();
+            }
+
+            function Back() {
+                hideButtons();
+                hideBattleButtons();
+                hideTrainButtons();
+                gamestate = "idle";
+                updateGameState();
+                winImg.style.display = "none";
+                LosImg.style.display = "none";
+            }
+
+            function updateGameState() {
+                switch (gamestate) {
+                    case "TitleScreen":
+                        TitleScreen();
+                        document.getElementById('SaveButton').style.display = 'none';
+                        break;
+
+                    case "idle":
+                        if (!currentmon) {
+                            egg();
+                        }
+                        document.getElementById('restartButton').style.display = 'none';
+                        document.getElementById('MenuButton').style.display = 'inline-block';
+                        document.getElementById('feedButton').style.display = 'none';
+                        document.getElementById('sleepButton').style.display = 'none';
+                        document.getElementById('trainButton').style.display = 'none';
+                        document.getElementById('battleButton').style.display = 'inline-block';
+                        document.getElementById('onlineBattleButton').style.display = 'none';
+                        document.getElementById('localBattleButton').style.display = 'none';
+                        document.getElementById('AttackButton').style.display = 'none';
+                        document.getElementById('NextButton').style.display = 'none';
+                        document.getElementById('TrainAttackButton').style.display = 'none';
+                        document.getElementById('TrainDefenseButton').style.display = 'none';
+                        document.getElementById('TrainSpatialButton').style.display = 'none';
+                        document.getElementById('StartButton').style.display = 'none';
+                        document.getElementById('SaveButton').style.display = 'inline-block';
+                        winImg.style.display = "none";
+                        LosImg.style.display = "none";
+                        showMonster();
+                        if (!timerInterval) startTimer();
+                        break;
+
+                    case "menu":
+                        break;
+
+                    case "battle":
+                        break;
+
+                    case "train_spatial":
+                        hideButtons();
+                        hideBattleButtons();
+                        hideTrainButtons();
+                        document.getElementById('backButton').style.display = 'inline-block';
+                        spatialGameState = "MENU";
+                        break;
+                }
+            }
+
+            function TitleScreen() {
+                console.log("Displaying Title Screen...");
+                const width = canvas.width || 500;
+                const height = canvas.height || 400;
+                ctx.clearRect(0, 0, width, height);
+
+                const bg = ctx.createLinearGradient(0, 0, 0, height);
+                bg.addColorStop(0, '#f7fbff');
+                bg.addColorStop(1, '#d8ecff');
+                ctx.fillStyle = bg;
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = '#1f2937';
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillText('Bytebimon', width / 2, height / 2 - 20);
+                ctx.font = '16px Arial';
+                ctx.fillText('Press Start Game to begin', width / 2, height / 2 + 16);
+
+                const hiddenButtons = [
+                    'MenuButton', 'feedButton', 'sleepButton', 'trainButton', 'battleButton',
+                    'onlineBattleButton', 'localBattleButton', 'HostButton', 'JoinButton', 'RaidsButton',
+                    'settingsButton', 'volumeButton',
+                    'updateButton', 'AttackButton', 'NextButton', 'TrainDefenseButton', 'TrainAttackButton', 'TrainSpatialButton', 'restartButton'
+                ];
+                hiddenButtons.forEach((id) => {
+                    const button = document.getElementById(id);
+                    if (button) button.style.display = 'none';
+                });
+
+                const placeholder = document.getElementById('monsterPlaceholder');
+                if (placeholder) placeholder.style.display = 'none';
+                const enemyPlaceholder = document.getElementById('enemyMonsterPlaceholder');
+                if (enemyPlaceholder) enemyPlaceholder.style.display = 'none';
+
+                const startButton = document.getElementById('StartButton');
+                if (startButton) startButton.style.display = 'inline-block';
+            }
+
+            function load() {
+                const savedData = localStorage.getItem('ardumonGameData');
+                if (savedData) {
+                    const gameData = JSON.parse(savedData);
+                    hunger = gameData.hunger;
+                    stats = gameData.stats;
+                    health = gameData.health;
+                    currentmon = gameData.currentmon;
+                    mute = gameData.mute;
+                    timer = gameData.timer;
+                    requirements = gameData.requirements;
+                    Enemymon = gameData.Enemymon;
+                    turn = gameData.turn;
+                    playerBattleHealth = gameData.playerBattleHealth;
+                    enemyBattleHealth = gameData.enemyBattleHealth;
+                    currentHP = gameData.currentHP;
+                    maxPlayerHP = gameData.maxPlayerHP;
+                    gamestate = gameData.gamestate;
+                    inBattle = gameData.inBattle;
+                    if (currentmon && !requirements) {
+                        setEvolutionRequirements();
+                    }
+                    console.log("Game loaded.");
+                }
+            }
+
+            function save() {
+                const gameData = {
+                    hunger,
+                    stats,
+                    health,
+                    currentmon,
+                    mute,
+                    timer,
+                    requirements,
+                    Enemymon,
+                    turn,
+                    playerBattleHealth,
+                    enemyBattleHealth,
+                    currentHP,
+                    maxPlayerHP,
+                    gamestate,
+                    inBattle
+                };
+                localStorage.setItem('ardumonGameData', JSON.stringify(gameData));
+                console.log("Game saved.");
+            }
+
+            function StartGame() {
+                const startButton = document.getElementById('StartButton');
+                if (startButton) startButton.style.display = 'none';
+                console.log("Starting the game...");
+                load();
+                gamestate = "idle";
+                updateGameState();
+            }
+
+            function resizeCanvas() {
+                const stage = canvas.parentElement;
+                if (!stage) return;
+
+                const ratio = window.devicePixelRatio || 1;
+                const width = stage.clientWidth || 500;
+                const height = stage.clientHeight || 400;
+
+                canvas.width = Math.round(width * ratio);
+                canvas.height = Math.round(height * ratio);
+                ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+                drawGameScene();
+            }
+
+            function drawSpriteToCanvas(spriteData, x, y, scale) {
+                if (!spriteData || spriteData.length === 0) return;
+
+                spriteData.forEach(shape => {
+                    if (shape.type === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(x + shape.cx * scale, y + shape.cy * scale, shape.r * scale, 0, Math.PI * 2);
+                        ctx.fillStyle = shape.fill;
+                        ctx.fill();
+                    } else if (shape.type === 'rect') {
+                        ctx.fillStyle = shape.fill;
+                        ctx.fillRect(x + shape.x * scale, y + shape.y * scale, shape.width * scale, shape.height * scale);
+                    } else if (shape.type === 'ellipse') {
+                        ctx.beginPath();
+                        ctx.ellipse(x + shape.cx * scale, y + shape.cy * scale, shape.rx * scale, shape.ry * scale, 0, 0, Math.PI * 2);
+                        ctx.fillStyle = shape.fill;
+                        ctx.fill();
+                    } else if (shape.type === 'polygon') {
+                        const points = shape.points.split(' ').map(point => point.split(',').map(Number));
+                        if (points.length === 0) return;
+                        ctx.beginPath();
+                        ctx.moveTo(x + points[0][0] * scale, y + points[0][1] * scale);
+                        points.slice(1).forEach(([px, py]) => ctx.lineTo(x + px * scale, y + py * scale));
+                        ctx.closePath();
+                        ctx.fillStyle = shape.fill;
+                        ctx.fill();
+                    }
+                });
+            }
+
+            function getSpriteBounds(spriteData) {
+                if (!spriteData || spriteData.length === 0) {
+                    return { minX: 0, minY: 0, maxX: 24, maxY: 24 };
+                }
+
+                let minX = Infinity;
+                let minY = Infinity;
+                let maxX = -Infinity;
+                let maxY = -Infinity;
+
+                spriteData.forEach(shape => {
+                    if (shape.type === 'circle') {
+                        minX = Math.min(minX, shape.cx - shape.r);
+                        minY = Math.min(minY, shape.cy - shape.r);
+                        maxX = Math.max(maxX, shape.cx + shape.r);
+                        maxY = Math.max(maxY, shape.cy + shape.r);
+                    } else if (shape.type === 'rect') {
+                        minX = Math.min(minX, shape.x);
+                        minY = Math.min(minY, shape.y);
+                        maxX = Math.max(maxX, shape.x + shape.width);
+                        maxY = Math.max(maxY, shape.y + shape.height);
+                    } else if (shape.type === 'ellipse') {
+                        minX = Math.min(minX, shape.cx - shape.rx);
+                        minY = Math.min(minY, shape.cy - shape.ry);
+                        maxX = Math.max(maxX, shape.cx + shape.rx);
+                        maxY = Math.max(maxY, shape.cy + shape.ry);
+                    } else if (shape.type === 'polygon') {
+                        const points = shape.points.split(' ').map(point => point.split(',').map(Number));
+                        points.forEach(([px, py]) => {
+                            minX = Math.min(minX, px);
+                            minY = Math.min(minY, py);
+                            maxX = Math.max(maxX, px);
+                            maxY = Math.max(maxY, py);
+                        });
+                    }
+                });
+
+                if (!Number.isFinite(minX)) {
+                    return { minX: 0, minY: 0, maxX: 24, maxY: 24 };
+                }
+
+                return { minX, minY, maxX, maxY };
+            }
+
+            function drawTimingMeter() {
+                if (!inBattle || turn !== 'player') return;
+
+                // Move Needle
+                if (timingState === "PLAYING") {
+                    if (movingRight) {
+                        needleX += needleSpeed;
+                        if (needleX >= barX + barWidth) movingRight = false;
+                    } else {
+                        needleX -= needleSpeed;
+                        if (needleX <= barX) movingRight = true;
+                    }
+                }
+
+                // Meter Background Frame
+                ctx.fillStyle = "#333333";
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                ctx.strokeStyle = "#FFFFFF";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+                // Sweet Spot Zone
+                ctx.fillStyle = "rgba(76, 175, 80, 0.8)";
+                ctx.fillRect(targetX, barY, targetWidth, barHeight);
+
+                // Indicator Needle
+                ctx.strokeStyle = "#FFD700";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(needleX, barY - 4);
+                ctx.lineTo(needleX, barY + barHeight + 4);
+                ctx.stroke();
+
+                // Instructions or Feedback text
+                ctx.fillStyle = "#1F2937";
+                ctx.font = "bold 12px Arial";
+                ctx.textAlign = "center";
+                if (scoreText) {
+                    ctx.fillText(scoreText, barX + barWidth / 2, barY - 8);
+                } else {
+                    ctx.fillText("Click or Press Space for Critical Hit!", barX + barWidth / 2, barY - 8);
+                }
+            }
+
+            function checkTiming() {
+                if (timingState === "PLAYING") {
+                    if (needleX >= targetX && needleX <= targetX + targetWidth) {
+                        timingState = "SUCCESS";
+                        scoreText = "CRITICAL HIT!";
+                        effort = 0; // Bonus/Normal damage
+                    } else {
+                        timingState = "MISS";
+                        scoreText = "MISSED!";
+                        effort = 9; // Reduction penalty
+                    }
+                } else {
+                    // Reset Timing Meter
+                    timingState = "PLAYING";
+                    needleX = barX;
+                    movingRight = true;
+                    scoreText = "";
+                }
+            }
+
+            // ==========================================
+            // SPATIAL AVOIDANCE MINIGAME ENGINE
+            // ==========================================
+
+            function startSpatialTraining() {
+                spatialScore = 0;
+                spatialHealth = SPATIAL_CONFIG.MAX_HEALTH;
+                spatialPlayer.x = 250;
+                spatialPlayer.y = 320;
+                spatialHazards = [];
+                spawnSpatialTarget();
+                spatialGameState = "TRAINING";
+            }
+
+            function spawnSpatialTarget() {
+                spatialTarget.x = Math.random() * 440 + 30;
+                spatialTarget.y = Math.random() * 260 + 80;
+            }
+
+            function renderSpatialMinigame(width, height) {
+                ctx.fillStyle = "#1e293b";
+                ctx.fillRect(0, 0, width, height);
+
+                switch (spatialGameState) {
+                    case "MENU":
+                        drawSpatialMenu(width, height);
+                        break;
+                    case "TRAINING":
+                        updateAndDrawSpatialTraining(width, height);
+                        break;
+                    case "VICTORY":
+                        drawSpatialEndScreen(true, width, height);
+                        break;
+                    case "GAME_OVER":
+                        drawSpatialEndScreen(false, width, height);
+                        break;
+                }
+            }
+
+            function drawSpatialMenu(width, height) {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 22px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("HAZARD AVOIDANCE TRAINING", width / 2, height / 2 - 40);
+
+                ctx.font = "14px Arial";
+                ctx.fillStyle = "#cbd5e1";
+                ctx.fillText("Collect green energy nodes while dodging red hazards.", width / 2, height / 2 - 10);
+                ctx.fillText("Use ARROW KEYS or WASD to move your Bytebimon.", width / 2, height / 2 + 15);
+
+                ctx.fillStyle = "#3b82f6";
+                ctx.fillRect(width / 2 - 90, height / 2 + 45, 180, 40);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px Arial";
+                ctx.fillText("PRESS SPACE", width / 2, height / 2 + 70);
+            }
+
+            function updateAndDrawSpatialTraining(width, height) {
+                // Movement Handling
+                if (activeKeys['ArrowLeft'] || activeKeys['KeyA']) spatialPlayer.x -= SPATIAL_CONFIG.PLAYER_SPEED;
+                if (activeKeys['ArrowRight'] || activeKeys['KeyD']) spatialPlayer.x += SPATIAL_CONFIG.PLAYER_SPEED;
+                if (activeKeys['ArrowUp'] || activeKeys['KeyW']) spatialPlayer.y -= SPATIAL_CONFIG.PLAYER_SPEED;
+                if (activeKeys['ArrowDown'] || activeKeys['KeyS']) spatialPlayer.y += SPATIAL_CONFIG.PLAYER_SPEED;
+
+                // Bounds Constraint
+                spatialPlayer.x = Math.max(spatialPlayer.r, Math.min(width - spatialPlayer.r, spatialPlayer.x));
+                spatialPlayer.y = Math.max(50 + spatialPlayer.r, Math.min(height - spatialPlayer.r, spatialPlayer.y));
+
+                // Spawn Hazards Periodically
+                if (Math.floor(performance.now() / 16) % 40 === 0) {
+                    spatialHazards.push({
+                        x: Math.random() * (width - 40) + 20,
+                        y: -10,
+                        r: Math.random() * 8 + 10,
+                        speed: Math.random() * 3 + SPATIAL_CONFIG.HAZARD_SPEED
+                    });
+                }
+
+                // Update & Render Hazards
+                for (let i = spatialHazards.length - 1; i >= 0; i--) {
+                    let h = spatialHazards[i];
+                    h.y += h.speed;
+
+                    ctx.fillStyle = "#ef4444";
+                    ctx.beginPath();
+                    ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Collision Check with Hazards
+                    let dx = spatialPlayer.x - h.x;
+                    let dy = spatialPlayer.y - h.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < spatialPlayer.r + h.r) {
+                        spatialHealth--;
+                        spatialHazards.splice(i, 1);
+                        if (spatialHealth <= 0) {
+                            spatialGameState = "GAME_OVER";
+                        }
+                        continue;
+                    }
+
+                    if (h.y > height + 20) spatialHazards.splice(i, 1);
+                }
+
+                // Target Handling
+                let targetDx = spatialPlayer.x - spatialTarget.x;
+                let targetDy = spatialPlayer.y - spatialTarget.y;
+                let targetDist = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+
+                if (targetDist < spatialPlayer.r + spatialTarget.r) {
+                    spatialScore++;
+                    if (spatialScore >= SPATIAL_CONFIG.WIN_SCORE) {
+                        spatialGameState = "VICTORY";
+                        // Stat Rewards
+                        stats.defense += 1;
+                        if (currentmon && currentmon.BattleStats) {
+                            currentmon.BattleStats.defense += 1;
+                        }
+                        hunger = Math.max(0, hunger - 1);
+                    } else {
+                        spawnSpatialTarget();
+                    }
+                }
+
+                // Render Target
+                ctx.fillStyle = "#10b981";
+                ctx.beginPath();
+                ctx.arc(spatialTarget.x, spatialTarget.y, spatialTarget.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Render Player Avatar (Using Currentmon Sprite Data)
+                if (currentmon && currentmon.spriteData) {
+                    const scale = 1.2;
+                    const bounds = getSpriteBounds(currentmon.spriteData);
+                    const spriteWidth = (bounds.maxX - bounds.minX) * scale;
+                    const spriteHeight = (bounds.maxY - bounds.minY) * scale;
+                    const spriteX = spatialPlayer.x - spriteWidth / 2 - bounds.minX * scale;
+                    const spriteY = spatialPlayer.y - spriteHeight / 2 - bounds.minY * scale;
+
+                    ctx.save();
+                    ctx.translate(spriteX, spriteY);
+                    drawSpriteToCanvas(currentmon.spriteData, 0, 0, scale);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = "#3b82f6";
+                    ctx.beginPath();
+                    ctx.arc(spatialPlayer.x, spatialPlayer.y, spatialPlayer.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Render HUD Header
+                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+                ctx.fillRect(0, 0, width, 40);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "14px Arial";
+                ctx.textAlign = "left";
+                ctx.fillText(`Targets: ${spatialScore} / ${SPATIAL_CONFIG.WIN_SCORE}`, 15, 25);
+
+                ctx.textAlign = "right";
+                let hpHearts = "";
+                for (let i = 0; i < SPATIAL_CONFIG.MAX_HEALTH; i++) {
+                    hpHearts += (i < spatialHealth) ? "❤️ " : "🖤 ";
+                }
+                ctx.fillText(`HP: ${hpHearts}`, width - 15, 25);
+            }
+
+            function drawSpatialEndScreen(isVictory, width, height) {
+                ctx.textAlign = "center";
+                ctx.font = "bold 24px Arial";
+
+                if (isVictory) {
+                    ctx.fillStyle = "#10b981";
+                    ctx.fillText("TRAINING PASSED!", width / 2, height / 2 - 30);
+                    ctx.fillStyle = "#cbd5e1";
+                    ctx.font = "14px Arial";
+                    ctx.fillText("+1 Defense Stat Earned!", width / 2, height / 2);
+                } else {
+                    ctx.fillStyle = "#ef4444";
+                    ctx.fillText("HAZARD LIMIT REACHED", width / 2, height / 2 - 30);
+                }
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "16px Arial";
+                ctx.fillText(`Final Score: ${spatialScore}`, width / 2, height / 2 + 30);
+                ctx.fillText("Press [R] to Retry or Back to Exit", width / 2, height / 2 + 60);
+            }
+
+            function drawGameScene(timestamp = performance.now()) {
+                const width = canvas.width / (window.devicePixelRatio || 1) || 500;
+                const height = canvas.height / (window.devicePixelRatio || 1) || 400;
+                ctx.clearRect(0, 0, width, height);
+
+                if (gamestate === "train_spatial") {
+                    renderSpatialMinigame(width, height);
+                    return;
+                }
+
+                const bg = ctx.createLinearGradient(0, 0, 0, height);
+                bg.addColorStop(0, '#f7fbff');
+                bg.addColorStop(1, '#d8ecff');
+                ctx.fillStyle = bg;
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < width; i += 24) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, height);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < height; i += 24) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(width, i);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = '#1f2937';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Bytebimon', width / 2, 32);
+
+                if (gamestate === "TitleScreen") {
+                    ctx.font = '16px Arial';
+                    ctx.fillText('Press Start Game to begin', width / 2, height / 2 + 16);
+                    return;
+                }
+
+                const elapsed = timestamp - animationState.startTime;
+                const progress = Math.min(1, elapsed / Math.max(1, animationState.duration));
+                const bob = animationState.type === 'idle' ? Math.sin(timestamp / 300) * 6 : animationState.type === 'bounce' ? Math.sin(progress * Math.PI) * 8 : 0;
+                const pulse = animationState.type === 'battle-start' ? 1 + Math.sin(progress * Math.PI) * 0.15 : animationState.type === 'attack' ? 1 + Math.sin(progress * Math.PI * 2) * 0.08 : 1;
+                const flashAlpha = animationState.type === 'battle-start' || animationState.type === 'attack' ? Math.max(0, 0.25 * (1 - progress)) : 0;
+                let playerOffset = 0;
+                let enemyOffset = 0;
+                if (animationState.type === 'attack') {
+                    const lungeProgress = Math.min(1, progress * 2);
+                    const attackDistance = 20 * Math.sin(lungeProgress * Math.PI);
+                    const recoil = Math.sin(progress * Math.PI * 6) * 3 * (1 - progress);
+                    if (animationState.actor === 'player') {
+                        playerOffset = attackDistance;
+                        enemyOffset = recoil;
+                    } else {
+                        enemyOffset = -attackDistance;
+                        playerOffset = -recoil;
+                    }
+                }
+
+                let shakeX = 0, shakeY = 0;
+                if (timestamp < shakeUntil) {
+                    shakeX = (Math.random() - 0.5) * 2 * shakeMagnitude;
+                    shakeY = (Math.random() - 0.5) * 2 * shakeMagnitude;
+                }
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
+
+                if (flashAlpha > 0) {
+                    ctx.save();
+                    ctx.fillStyle = `rgba(255,255,255,${flashAlpha})`;
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.restore();
+                }
+
+                if (inBattle && Enemymon && gamestate === 'battle' && currentmon && currentmon.spriteData) {
+                    const scale = Math.min(width, height) * 0.01;
+                    const playerBounds = getSpriteBounds(currentmon.spriteData);
+                    const enemyBounds = getSpriteBounds(Enemymon.spriteData);
+                    const playerWidth = (playerBounds.maxX - playerBounds.minX) * scale;
+                    const enemyWidth = (enemyBounds.maxX - enemyBounds.minX) * scale;
+                    const playerBaseX = width * 0.26 - playerWidth / 2 - playerBounds.minX * scale + playerOffset;
+                    const enemyBaseX = width * 0.74 - enemyWidth / 2 - enemyBounds.minX * scale + enemyOffset;
+                    const monsterY = height * 0.5 + bob;
+
+                    ctx.save();
+                    ctx.translate(playerBaseX, monsterY);
+                    ctx.scale(pulse, pulse);
+                    drawSpriteToCanvas(currentmon.spriteData, 0, 0, scale);
+                    ctx.restore();
+
+                    ctx.save();
+                    ctx.translate(enemyBaseX, monsterY);
+                    ctx.scale(pulse, pulse);
+                    drawSpriteToCanvas(Enemymon.spriteData, 0, 0, scale);
+                    ctx.restore();
+
+                    ctx.font = '14px Arial';
+                    ctx.fillText(`${currentmon.name}`, width * 0.26, height - 120);
+                    ctx.fillText(`${Enemymon.name}`, width * 0.74, height - 120);
+                    ctx.font = '12px Arial';
+                    ctx.fillText(`HP ${currentHP}/${maxPlayerHP}`, width * 0.26, height - 104);
+                    ctx.fillText(`HP ${enemyBattleHealth}/${Enemymon.BattleStats.health}`, width * 0.74, height - 104);
+
+                    const hpBarWidth = width * 0.32;
+                    const playerHpRatio = Math.max(0, Math.min(1, currentHP / Math.max(1, maxPlayerHP)));
+                    const enemyHpRatio = Math.max(0, Math.min(1, enemyBattleHealth / Math.max(1, Enemymon.BattleStats.health)));
+                    drawHpBar(width * 0.26 - hpBarWidth / 2, height - 92, hpBarWidth, playerHpRatio);
+                    drawHpBar(width * 0.74 - hpBarWidth / 2, height - 92, hpBarWidth, enemyHpRatio);
+
+                    damagePopups = damagePopups.filter(popup => timestamp - popup.startTime < 800);
+                    damagePopups.forEach(popup => {
+                        const age = (timestamp - popup.startTime) / 800;
+                        const x = popup.side === 'player' ? width * 0.26 : width * 0.74;
+                        const y = monsterY - 20 - age * 26;
+                        ctx.save();
+                        ctx.globalAlpha = Math.max(0, 1 - age);
+                        ctx.fillStyle = '#dc2626';
+                        ctx.font = 'bold 18px Arial';
+                        ctx.fillText(`-${popup.amount}`, x, y);
+                        ctx.restore();
+                    });
+
+                    // Draw the Precision Timing Bar when fighting
+                    drawTimingMeter();
+
+                } else if (currentmon && currentmon.spriteData) {
+                    const scale = Math.min(width, height) * 0.04;
+                    const bounds = getSpriteBounds(currentmon.spriteData);
+                    const spriteWidth = (bounds.maxX - bounds.minX) * scale;
+                    const spriteHeight = (bounds.maxY - bounds.minY) * scale;
+                    const spriteX = width / 2 - spriteWidth / 2 - bounds.minX * scale;
+                    const spriteY = height / 2 - spriteHeight / 2 - bounds.minY * scale + bob;
+                    ctx.save();
+                    ctx.translate(spriteX, spriteY);
+                    ctx.scale(pulse, pulse);
+                    drawSpriteToCanvas(currentmon.spriteData, 0, 0, scale);
+                    ctx.restore();
+
+                    ctx.font = '16px Arial';
+                    ctx.fillText(`${currentmon.name}`, width / 2, height - 64);
+                    ctx.font = '14px Arial';
+                    ctx.fillText(`Hunger: ${hunger.toFixed(1)} | Health: ${health} | Attack: ${stats.attack} | Defense: ${stats.defense}`, width / 2, height - 40);
+                } else {
+                    ctx.font = '18px Arial';
+                    ctx.fillText('Hatching...', width / 2, height / 2);
+                }
+
+                ctx.restore();
+            }
+
+            function drawHpBar(x, y, width, ratio) {
+                const barH = 6;
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.15)';
+                ctx.fillRect(x, y, width, barH);
+                const fillColor = ratio > 0.5 ? '#22c55e' : ratio > 0.2 ? '#f59e0b' : '#ef4444';
+                ctx.fillStyle = fillColor;
+                ctx.fillRect(x, y, width * ratio, barH);
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, width, barH);
+                ctx.restore();
+            }
+
+            window.addEventListener('load', () => {
+                initializeGame();
+                resizeCanvas();
+                requestAnimationFrame(animateFrame);
+            });
+            window.addEventListener('resize', resizeCanvas);
+
+            window.addEventListener('keydown', (e) => {
+                activeKeys[e.code] = true;
+
+                if (e.code === "Space" && inBattle && turn === "player") {
+                    checkTiming();
+                }
+
+                if (gamestate === "train_spatial") {
+                    if (e.code === "Space" && spatialGameState === "MENU") {
+                        startSpatialTraining();
+                    }
+                    if ((e.key === "r" || e.key === "R") && (spatialGameState === "GAME_OVER" || spatialGameState === "VICTORY")) {
+                        startSpatialTraining();
+                    }
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                activeKeys[e.code] = false;
+            });
+
+            canvas.addEventListener('mousedown', () => {
+                if (inBattle && turn === "player") {
+                    checkTiming();
+                }
+            });
+
+            function hungerDecay() {
+                hunger -= 0.1;
+                if (hunger < 0) hunger = 0;
+                console.log("Hunger decreased to: " + hunger);
+                updateMonsterDisplay();
+                if (hunger === 0) {
+                    health -= 1;
+                    if (health < 0) health = 0;
+                }
+
+                if (health === 0) {
+                    console.log("Monster is dead");
+                    customAlert("Your ByteBimon Has sadly died from hunger, You should have fed it on time, how do you feel about yourself");
+                    restart();
+                }
+            }
+
+            function startTimer() {
+                if (timerInterval) return;
+
+                timerInterval = setInterval(() => {
+                    timer += 1;
+                    EvoCheck += 1;
+                    hungerDecay();
+                    console.log('1 second has passed');
+
+                    if (EvoCheck === 3) {
+                        Evolve();
+                        EvoCheck = 0;
+                    }
+                }, 1000);
+            }
+
+            function renderSprite(spriteData) {
+                if (!spriteData || spriteData.length === 0) return '';
+
+                let svgContent = '';
+                spriteData.forEach(shape => {
+                    if (shape.type === 'circle') {
+                        svgContent += `<circle cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}" fill="${shape.fill}" />`;
+                    } else if (shape.type === 'rect') {
+                        svgContent += `<rect x="${shape.x}" y="${shape.y}" width="${shape.width}" height="${shape.height}" fill="${shape.fill}" />`;
+                    } else if (shape.type === 'polygon') {
+                        svgContent += `<polygon points="${shape.points}" fill="${shape.fill}" />`;
+                    }
+                });
+                return svgContent;
+            }
+
+            function showMonster() {
+                const placeholder = document.getElementById('monsterPlaceholder');
+                const svg = document.querySelector('#monsterPlaceholder svg');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+                if (svg && currentmon && currentmon.spriteData) {
+                    svg.innerHTML = renderSprite(currentmon.spriteData);
+                }
+                drawGameScene();
+            }
+
+            function showEnemyMonster() {
+                const placeholder = document.getElementById('enemyMonsterPlaceholder');
+                const svg = document.querySelector('#enemyMonsterPlaceholder svg');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+                if (svg && Enemymon && Enemymon.spriteData) {
+                    svg.innerHTML = renderSprite(Enemymon.spriteData);
+                }
+                const label = document.getElementById('enemyMonsterLabel');
+                if (label && Enemymon) {
+                    label.textContent = `${Enemymon.name} | HP: ${Enemymon.BattleStats.health}`;
+                }
+            }
+
+            function updateMonsterDisplay() {
+                const label = document.getElementById('monsterLabel');
+                if (!label || !currentmon) return;
+
+                if (inBattle && gamestate === 'battle') {
+                    updateBattleDisplay();
+                    return;
+                }
+
+                label.textContent = `${currentmon.name} | Hunger: ${hunger.toFixed(1)} | Health: ${health} | Attack: ${stats.attack} | Defense: ${stats.defense}`;
+                drawGameScene();
+            }
+
+            function menu() {
+                console.log("Opening menu...");
+                gamestate = "menu";
+                winImg.style.display = "none";
+                LosImg.style.display = "none";
+                document.getElementById('onlineBattleButton').style.display = 'none';
+                document.getElementById('localBattleButton').style.display = 'none';
+                document.getElementById('MenuButton').style.display = 'none';
+                document.getElementById('feedButton').style.display = 'inline-block';
+                document.getElementById('sleepButton').style.display = 'inline-block';
+                document.getElementById('trainButton').style.display = 'inline-block';
+                document.getElementById('battleButton').style.display = 'inline-block';
+                document.getElementById('settingsButton').style.display = 'inline-block';
+                document.getElementById('backButton').style.display = 'inline-block';
+            }
+
+            function egg() {
+                console.log("Hatching from an egg...");
+                initRandomMon();
+            }
+
+            function initRandomMon() {
+                const chosenArray = (Math.random() < 0.5 && updateMon.length > 0) ? updateMon : BaseMon;
+                const randomIndex = Math.floor(Math.random() * chosenArray.length);
+                currentmon = JSON.parse(JSON.stringify(chosenArray[randomIndex]));
+                currentmon.evolved = currentmon.evolved || false;
+                setEvolutionRequirements();
+                console.log(`A wild ${currentmon.name} has appeared!`);
+                updateMonsterDisplay();
+            }
+
+            function setEvolutionRequirements() {
+                if (!currentmon || !currentmon.BattleStats) {
+                    requirements = null;
+                    return;
+                }
+                requirements = {
+                    attack: Math.ceil(currentmon.BattleStats.attack * 1.5),
+                    defense: Math.ceil(currentmon.BattleStats.defense * 1.5)
+                };
+            }
+
+            function FeedButton() {
+                hunger += 10;
+                if (hunger > 20) hunger = 20;
+                triggerAnimation('bounce', 400);
+                console.log("Feeding Ardumon. Hunger is now: " + hunger);
+                updateMonsterDisplay();
+                hideButtons();
+                gamestate = "idle";
+                updateGameState();
+            }
+
+            function SleepButton() {
+                health += 5;
+                if (health > 20) health = 20;
+                triggerAnimation('bounce', 400);
+                console.log("Ardumon is sleeping. Health is now: " + health);
+                updateMonsterDisplay();
+                hideButtons();
+                gamestate = "idle";
+                updateGameState();
+            }
+
+            function hideTrainButtons() {
+                document.getElementById('TrainAttackButton').style.display = 'none';
+                document.getElementById('TrainDefenseButton').style.display = 'none';
+                document.getElementById('TrainSpatialButton').style.display = 'none';
+            }
+
+            function TrainButton() {
+                document.getElementById('TrainAttackButton').style.display = 'inline-block';
+                document.getElementById('TrainDefenseButton').style.display = 'inline-block';
+                document.getElementById('TrainSpatialButton').style.display = 'inline-block';
+                hideButtons();
+                hideBattleButtons();
+                document.getElementById('backButton').style.display = 'inline-block';
+            }
+
+            function TspatialButton() {
+                gamestate = "train_spatial";
+                updateGameState();
+            }
+
+            function TattackButton() {
+                stats.attack += 1;
+                if (currentmon && currentmon.BattleStats) {
+                    currentmon.BattleStats.attack += 1;
+                }
+                customAlert(`Attack is now at ${stats.attack}`);
+                console.log("Training completed. Attack is now: " + stats.attack);
+                updateMonsterDisplay();
+                hideButtons();
+                hideTrainButtons();
+                gamestate = "idle";
+                updateGameState();
+                if (stats.attack >= 11) {
+                    stats.attack = 10;
+                }
+                if (currentmon && currentmon.BattleStats && currentmon.BattleStats.attack >= 11) {
+                    currentmon.BattleStats.attack = 10;
+                    customAlert("attack is max");
+                }
+            }
+
+            function TdefenseButton() {
+                stats.defense += 1;
+                if (currentmon && currentmon.BattleStats) {
+                    currentmon.BattleStats.defense += 1;
+                }
+                customAlert(`Defense is now at ${stats.defense}`);
+                console.log("Training completed. Defense is now: " + stats.defense);
+                updateMonsterDisplay();
+                hideButtons();
+                hideTrainButtons();
+                gamestate = "idle";
+                updateGameState();
+                if (stats.defense >= 11) {
+                    stats.defense = 10;
+                    customAlert("Defense is max");
+                }
+                if (currentmon && currentmon.BattleStats && currentmon.BattleStats.defense >= 11) {
+                    currentmon.BattleStats.defense = 10;
+                }
+            }
+
+            function getPlayerDamage() {
+                const baseAtk = currentmon?.BattleStats?.attack ?? 1;
+                const defense = Enemymon?.BattleStats?.defense ?? 0;
+                const effectiveAttack = Math.max(1, baseAtk - effort);
+                return Math.max(1, effectiveAttack - defense);
+            }
+
+            function getEnemyDamage() {
+                const attack = Enemymon?.BattleStats?.attack ?? 1;
+                const defense = currentmon?.BattleStats?.defense ?? 0;
+                return Math.max(1, attack - defense);
+            }
+
+            function resetBattleHP() {
+                damagePopups = [];
+                shakeUntil = 0;
+                if (currentmon && currentmon.BattleStats) {
+                    maxPlayerHP = Math.max(1, currentmon.BattleStats.health);
+                    currentHP = maxPlayerHP;
+                } else {
+                    maxPlayerHP = 10;
+                    currentHP = maxPlayerHP;
+                }
+                playerBattleHealth = currentHP;
+                enemyBattleHealth = Enemymon ? Math.max(1, Enemymon.BattleStats.health) : 10;
+            }
+
+            function Attack() {
+                if (turn !== "player") return;
+                triggerAnimation('attack', 350, 'player');
+                const damage = getPlayerDamage();
+                enemyBattleHealth = Math.max(0, enemyBattleHealth - damage);
+                console.log(`${currentmon.name} attacks for ${damage} damage!`);
+                spawnDamagePopup(damage, 'enemy');
+                triggerShake(280, 5);
+                updateBattleDisplay();
+
+                if (enemyBattleHealth <= 0) {
+                    customAlert(`Victory! ${currentmon.name} defeated ${Enemymon.name}!`);
+                    if (isOnlineBattle) {
+                        sendGameData({ type: 'attack', damage: damage });
+                    }
+                    endBattle();
+                    winImg.style.display = "block";
+                    popIn(winImg);
+                    setTimeout(() => {
+                        winImg.style.display = "none";
+                    }, 3000);
+                    return;
+                }
+
+                turn = "enemy";
+                document.getElementById('AttackButton').style.display = 'none';
+                if (isOnlineBattle) {
+                    sendGameData({ type: 'attack', damage: damage });
+                    document.getElementById('NextButton').style.display = 'none';
+                } else {
+                    document.getElementById('NextButton').style.display = 'inline-block';
+                }
+
+                // Reset timing state for next turn
+                timingState = "PLAYING";
+                needleX = barX;
+                scoreText = "";
+            }
+
+            function Next() {
+                if (turn === "enemy") {
+                    enemyTurn();
+                }
+            }
+
+            function enemyTurn() {
+                triggerAnimation('attack', 350, 'enemy');
+                const damage = getEnemyDamage();
+                currentHP = Math.max(0, currentHP - damage);
+                playerBattleHealth = currentHP;
+                console.log(`${Enemymon.name} attacks for ${damage} damage!`);
+                spawnDamagePopup(damage, 'player');
+                triggerShake(280, 5);
+                updateBattleDisplay();
+
+                if (playerBattleHealth <= 0) {
+                    customAlert(`Defeat! ${currentmon.name} lost to ${Enemymon.name}!`);
+                    endBattle();
+                    LosImg.style.display = "block";
+                    popIn(LosImg);
+                    setTimeout(() => {
+                        LosImg.style.display = "none";
+                    }, 3000);
+                    return;
+                }
+
+                turn = "player";
+                document.getElementById('AttackButton').style.display = 'inline-block';
+                document.getElementById('NextButton').style.display = 'none';
+            }
+
+            function updateBattleDisplay() {
+                const playerLabel = document.getElementById('monsterLabel');
+                if (playerLabel) {
+                    playerLabel.textContent = `${currentmon.name} | HP: ${currentHP}/${maxPlayerHP}`;
+                }
+                const enemyLabel = document.getElementById('enemyMonsterLabel');
+                if (enemyLabel) {
+                    enemyLabel.textContent = `${Enemymon.name} | HP: ${enemyBattleHealth}/${Enemymon.BattleStats.health}`;
+                }
+                drawGameScene();
+            }
+
+            function endBattle() {
+                document.getElementById('AttackButton').style.display = 'none';
+                document.getElementById('NextButton').style.display = 'none';
+                inBattle = false;
+                gamestate = "idle";
+                if (conn) {
+                    try { conn.close(); } catch (e) { }
+                    conn = null;
+                }
+                if (peer) {
+                    try { peer.destroy(); } catch (e) { }
+                    peer = null;
+                }
+                isOnlineBattle = false;
+                isHost = false;
+                updateMonsterDisplay();
+                updateGameState();
+            }
+
+            function battle() {
+                gamestate = "battle";
+                console.log("Entering battle menu...");
+                hideButtons();
+                document.getElementById('MenuButton').style.display = 'none';
+                document.getElementById('onlineBattleButton').style.display = 'inline-block';
+                document.getElementById('localBattleButton').style.display = 'inline-block';
+                document.getElementById('backButton').style.display = 'inline-block';
+            }
+
+            function onlineBattle() {
+                console.log('Starting online battle...');
+                hideTrainButtons();
+                hideButtons();
+                document.getElementById('HostButton').style.display = 'inline-block';
+                document.getElementById('JoinButton').style.display = 'inline-block';
+                document.getElementById('RaidsButton').style.display = 'inline-block';
+                document.getElementById('MenuButton').style.display = 'none';
+                document.getElementById('onlineBattleButton').style.display = 'none';
+                document.getElementById('localBattleButton').style.display = 'none';
+                document.getElementById('backButton').style.display = 'inline-block';
+            }
+
+            function goToRaids() {
+                window.location.href = 'RaidHost.html';
+                save()
+            }
+
+            function hostMatch() {
+                isHost = true;
+                isOnlineBattle = true;
+                hideBattleButtons();
+
+                if (peer) { try { peer.destroy(); } catch (e) { } }
+
+                const roomCode = 'BYTEBI-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+                console.log("Hosting match with room code:", roomCode);
+
+                peer = new Peer(roomCode);
+
+                peer.on('open', (id) => {
+                    customPrompt('Your Room Code (share this with your opponent):', id);
+                    console.log('Waiting for opponent to join with code:', id);
+                });
+
+                peer.on('connection', (incomingConn) => {
+                    conn = incomingConn;
+                    setupPeerConnection(conn);
+                });
+
+                peer.on('error', (err) => {
+                    console.error('PeerJS error:', err);
+                    if (err.type === 'unavailable-id') {
+                        customAlert('Room code already in use. Try hosting again.');
+                    } else {
+                        customAlert('Connection error: ' + err.message);
+                    }
+                    endBattle();
+                });
+            }
+
+            async function joinMatch() {
+                const roomCode = await customPrompt('Enter the Room Code from the host:');
+                if (!roomCode || !roomCode.trim()) {
+                    console.log('Join cancelled.');
+                    return;
+                }
+
+                const cleanedCode = roomCode.trim();
+
+                if (cleanedCode.toUpperCase().startsWith('BYTEBI')) {
+                    isHost = false;
+                    isOnlineBattle = true;
+                    hideBattleButtons();
+
+                    if (peer) { try { peer.destroy(); } catch (e) { } }
+
+                    peer = new Peer();
+
+                    peer.on('open', () => {
+                        console.log('Connecting to host:', cleanedCode);
+                        conn = peer.connect(cleanedCode);
+                        setupPeerConnection(conn);
+                    });
+
+                    peer.on('error', (err) => {
+                        console.error('PeerJS error:', err);
+                        customAlert('Could not connect: ' + err.message);
+                        endBattle();
+                    });
+                } else if (cleanedCode.toUpperCase().startsWith('BYTERAID')) {
+                    await customAlert('That is a raid code! Taking you to the Raid page to join up with your team.');
+                    try { sessionStorage.setItem('pendingRaidCode', cleanedCode); } catch (e) { }
+                    window.location.href = 'RaidHost.html';
+                } else {
+                    customAlert('That room code was not recognized. Double check it and try again.');
+                }
+            }
+
+            function setupPeerConnection(connection) {
+                connection.on('open', () => {
+                    console.log('CONNECTED to match!');
+                    if (!currentmon) {
+                        initRandomMon();
+                    }
+                    connection.send({ type: 'init', monster: currentmon });
+                });
+
+                connection.on('data', (data) => {
+                    try {
+                        handleIncomingGameData(data);
+                    } catch (e) {
+                        console.error('Failed to handle game data:', e);
+                    }
+                });
+
+                connection.on('close', () => {
+                    console.log('Peer connection closed.');
+                    if (inBattle) {
+                        customAlert('Multiplayer connection lost.');
+                        endBattle();
+                    }
+                });
+
+                connection.on('error', (err) => {
+                    console.error('Connection error:', err);
+                    customAlert('Connection error.');
+                    endBattle();
+                });
+            }
+
+            function sendGameData(data) {
+                if (conn && conn.open) {
+                    conn.send(data);
+                }
+            }
+
+            function handleIncomingGameData(data) {
+                if (!data) return;
+
+                if (data.type === 'init') {
+                    Enemymon = data.monster;
+                    inBattle = true;
+                    gamestate = 'battle';
+                    triggerAnimation('battle-start', 800);
+                    hideButtons();
+                    hideBattleButtons();
+
+                    resetBattleHP();
+
+                    console.log(`Connected to peer! Enemy ${Enemymon.name} appeared!`);
+                    showMonster();
+                    showEnemyMonster();
+                    updateBattleDisplay();
+
+                    if (isHost) {
+                        const startTurn = Math.random() < 0.5 ? 'player' : 'enemy';
+                        turn = startTurn;
+                        sendGameData({ type: 'start', turn: startTurn === 'player' ? 'enemy' : 'player' });
+                        document.getElementById('AttackButton').style.display = turn === 'player' ? 'inline-block' : 'none';
+                        document.getElementById('NextButton').style.display = 'none';
+                    }
+                } else if (data.type === 'start') {
+                    turn = data.turn;
+                    console.log(`Battle started. It is ${turn}'s turn.`);
+                    document.getElementById('AttackButton').style.display = turn === 'player' ? 'inline-block' : 'none';
+                    document.getElementById('NextButton').style.display = 'none';
+                } else if (data.type === 'attack') {
+                    triggerAnimation('attack', 350, 'enemy');
+                    const damage = data.damage;
+                    currentHP = Math.max(0, currentHP - damage);
+                    playerBattleHealth = currentHP;
+                    spawnDamagePopup(damage, 'player');
+                    triggerShake(280, 5);
+                    updateBattleDisplay();
+
+                    if (playerBattleHealth <= 0) {
+                        customAlert(`Defeat! ${currentmon.name} lost to ${Enemymon.name}!`);
+                        endBattle();
+                        LosImg.style.display = "block";
+                        popIn(LosImg);
+                        setTimeout(() => {
+                            LosImg.style.display = "none";
+                        }, 3000);
+                        return;
+                    }
+
+                    turn = "player";
+                    document.getElementById('AttackButton').style.display = 'inline-block';
+                    document.getElementById('NextButton').style.display = 'none';
+                }
+            }
+
+            function localBattle() {
+                console.log('Starting local battle...');
+                hideTrainButtons();
+                hideBattleButtons();
+                startBattle();
+            }
+
+            function pickRandomEnemyMonster() {
+                if (!currentmon) {
+                    initRandomMon();
+                }
+                let enemyIndex = Math.floor(Math.random() * BaseMon.length);
+                while (BaseMon[enemyIndex].id === currentmon.id && BaseMon.length > 1) {
+                    enemyIndex = Math.floor(Math.random() * BaseMon.length);
+                }
+                return JSON.parse(JSON.stringify(BaseMon[enemyIndex]));
+            }
+
+            function startBattle() {
+                if (!currentmon) {
+                    initRandomMon();
+                }
+
+                Enemymon = pickRandomEnemyMonster();
+                if (!Enemymon) return;
+
+                inBattle = true;
+                gamestate = 'battle';
+                triggerAnimation('battle-start', 800);
+                hideButtons();
+
+                resetBattleHP();
+                showMonster();
+                showEnemyMonster();
+                updateBattleDisplay();
+                initRandomTurn();
+            }
+
+            function initRandomTurn() {
+                turn = Math.random() < 0.5 ? 'player' : 'enemy';
+                console.log(`${turn}'s turn!`);
+                if (turn === 'player') {
+                    document.getElementById('AttackButton').style.display = 'inline-block';
+                    document.getElementById('NextButton').style.display = 'none';
+                } else {
+                    document.getElementById('AttackButton').style.display = 'none';
+                    document.getElementById('NextButton').style.display = 'inline-block';
+                }
+            }
+
+            function Evolve() {
+                if (currentmon && requirements && !currentmon.evolved) {
+                    if (timer >= (currentmon.evoTime || 120)) {
+                        if (stats.attack >= (requirements.attack || 0) && stats.defense >= (requirements.defense || 0)) {
+                            performEvolution();
+                        } else {
+                            console.log("Requirements not met for evolution.");
+                        }
+                    } else {
+                        console.log("Not enough time has passed to evolve.");
+                    }
+                }
+            }
+
+            function performEvolution() {
+                const previousName = currentmon.name;
+                currentmon.evolved = true;
+                currentmon.name = "Mega " + currentmon.name;
+
+                if (currentmon.BattleStats) {
+                    currentmon.BattleStats.attack = Math.round(currentmon.BattleStats.attack * 1.4);
+                    currentmon.BattleStats.defense = Math.round(currentmon.BattleStats.defense * 1.4);
+                    currentmon.BattleStats.health = Math.round(currentmon.BattleStats.health * 1.4);
+                    currentmon.BattleStats.speed = Math.round((currentmon.BattleStats.speed || 1) * 1.2);
+                }
+
+                // Add a golden aura ring behind the sprite so evolved monsters look distinct
+                if (currentmon.spriteData) {
+                    currentmon.spriteData = [
+                        { type: "ellipse", cx: 12, cy: 12, rx: 11, ry: 10, fill: "rgba(250, 204, 21, 0.35)" },
+                        ...currentmon.spriteData
+                    ];
+                }
+
+                health = Math.min(20, health + 5);
+                console.log(`${previousName} evolved into ${currentmon.name}!`);
+                customAlert(`Incredible! ${previousName} is evolving into ${currentmon.name}!`);
+                triggerAnimation('bounce', 500);
+                updateMonsterDisplay();
+                showMonster();
+            }
+
+            function hideButtons() {
+                document.getElementById('feedButton').style.display = 'none';
+                document.getElementById('sleepButton').style.display = 'none';
+                document.getElementById('trainButton').style.display = 'none';
+                document.getElementById('battleButton').style.display = 'none';
+                document.getElementById('volumeButton').style.display = 'none';
+                document.getElementById('updateButton').style.display = 'none';
+                document.getElementById('SaveButton').style.display = 'none';
+                document.getElementById('settingsButton').style.display = 'none';
+                document.getElementById('backButton').style.display = 'none';
+            }
+
+            function hideBattleButtons() {
+                document.getElementById('onlineBattleButton').style.display = 'none';
+                document.getElementById('localBattleButton').style.display = 'none';
+                document.getElementById('HostButton').style.display = 'none';
+                document.getElementById('JoinButton').style.display = 'none';
+                document.getElementById('RaidsButton').style.display = 'none';
+                document.getElementById('MenuButton').style.display = 'none';
+            }
+
+            function settings() {
+                console.log("Opening settings...");
+                hideButtons();
+                hideBattleButtons();
+                document.getElementById('settingsButton').style.display = 'none';
+                document.getElementById('volumeButton').style.display = 'inline-block';
+                document.getElementById('updateButton').style.display = 'inline-block';
+                document.getElementById('SaveButton').style.display = 'inline-block';
+                document.getElementById('restartButton').style.display = 'inline-block';
+                document.getElementById('backButton').style.display = 'inline-block';
+            }
+
+            function volume() {
+                mute = !mute;
+                console.log("Mute is now: " + mute);
+                gamestate = "idle";
+                hideButtons();
+                updateGameState();
+            }
+
+            async function update() {
+                console.log("Checking for updates...");
+                try {
+                    // Prompt user to pick a JSON update file
+                    const [fileHandle] = await window.showOpenFilePicker({
+                        types: [{
+                            description: 'JSON Update Files',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    });
+
+                    // 1. Get the File object
+                    const file = await fileHandle.getFile();
+
+                    // 2. Read the actual text content inside the file
+                    const fileContent = await file.text();
+
+                    // 3. Parse JSON data from file
+                    const updateData = JSON.parse(fileContent);
+
+                    // 4. Update state using the data from the file
+                    gamestate = updateData.status || "idle";
+
+                    hideButtons();
+                    updateGameState();
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error("Failed to load update file:", err);
+                        customAlert("Could not read update file.");
+                    }
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>

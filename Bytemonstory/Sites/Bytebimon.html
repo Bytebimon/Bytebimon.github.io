@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BYTEBIMON.COM — Pokédex Terminal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+
+    :root {
+      --green: #00ff66;
+      --green-glow: rgba(0,255,102,0.35);
+      --bg: #030704;
+      --bg2: #07170a;
+      --panel: rgba(4, 18, 8, 0.9);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: radial-gradient(circle at center, var(--bg2), var(--bg) 80%);
+      color: var(--green);
+      min-height: 100vh;
+      padding: 12px 10px;
+    }
+
+    /* Scanlines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,102,0.02) 2px, rgba(0,255,102,0.02) 4px);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.05rem;
+      letter-spacing: 4px;
+      color: var(--green);
+      text-shadow: 0 0 14px var(--green-glow);
+    }
+    .subtitle {
+      font-size: 0.62rem;
+      color: #4ade80;
+      opacity: 0.6;
+      letter-spacing: 2px;
+      margin-top: 2px;
+    }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .filter-btn {
+      background: transparent;
+      border: 1px solid rgba(0,255,102,0.3);
+      border-radius: 4px;
+      color: #4ade80;
+      padding: 3px 9px;
+      font-family: inherit;
+      font-size: 0.62rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: rgba(0,255,102,0.15);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* ── Grid ── */
+    .dex-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ── Card (flip) ── */
+    .card-wrap {
+      perspective: 600px;
+      height: 180px;
+      cursor: pointer;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.55s cubic-bezier(.4,.2,.2,1);
+      transform-style: preserve-3d;
+    }
+    .card-wrap.flipped .card-inner { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 10px;
+      background: var(--panel);
+      border: 1px solid rgba(0,255,102,0.25);
+      box-shadow: 0 0 10px rgba(0,255,102,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      transition: box-shadow 0.2s;
+    }
+    .card-face.back { transform: rotateY(180deg); }
+
+    .card-wrap:hover .card-face {
+      box-shadow: 0 0 18px rgba(0,255,102,0.2);
+      border-color: rgba(0,255,102,0.5);
+    }
+
+    /* ── Sprite ── */
+    .sprite-svg {
+      width: 72px;
+      height: 72px;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 4px rgba(0,255,102,0.2));
+    }
+    .card-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 1px;
+      color: var(--green);
+      text-shadow: 0 0 6px var(--green-glow);
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .card-id {
+      font-size: 0.55rem;
+      color: #4ade80;
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+
+    /* ── Type badge ── */
+    .type-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* ── Back face ── */
+    .stat-list {
+      font-size: 0.62rem;
+      color: #c6f6d5;
+      line-height: 2;
+      text-align: left;
+      width: 100%;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0,255,102,0.1);
+    }
+    .stat-key { color: #4ade80; opacity: 0.75; }
+    .stat-val { color: var(--green); }
+
+    .stat-bar-wrap {
+      width: 100%;
+      height: 3px;
+      background: rgba(0,255,102,0.1);
+      border-radius: 2px;
+      margin-top: 2px;
+    }
+    .stat-bar {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--green);
+      box-shadow: 0 0 4px var(--green-glow);
+    }
+
+    .flip-hint {
+      font-size: 0.52rem;
+      color: #4ade80;
+      opacity: 0.5;
+      text-align: center;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+
+    /* ── Back link ── */
+    .back-row {
+      text-align: center;
+      margin-top: 14px;
+    }
+    .back-link {
+      color: var(--green);
+      text-decoration: none;
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      border: 1px solid rgba(0,255,102,0.3);
+      border-radius: 5px;
+      transition: all 0.2s;
+    }
+    .back-link:hover { background: rgba(0,255,102,0.12); }
+
+    /* Type colour palette */
+    .t-fire     { background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid #f87171; }
+    .t-water    { background: rgba(56,189,248,0.2); color: #38bdf8; border: 1px solid #38bdf8; }
+    .t-grass    { background: rgba(74,222,128,0.2); color: #4ade80; border: 1px solid #4ade80; }
+    .t-electric { background: rgba(250,204,21,0.2); color: #facc15; border: 1px solid #facc15; }
+    .t-bug      { background: rgba(163,230,53,0.2); color: #a3e635; border: 1px solid #a3e635; }
+    .t-dark     { background: rgba(120,53,15,0.3);  color: #b45309; border: 1px solid #b45309; }
+    .t-light    { background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid #fbbf24; }
+    .t-unknown  { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">BYTEBIMON.COM</div>
+  <div class="subtitle">// DIGITAL CREATURE REGISTRY — CLICK CARD TO REVEAL STATS //</div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <button class="filter-btn active" onclick="filterDex('all', this)">ALL</button>
+</div>
+
+<div class="dex-grid" id="dexGrid"></div>
+
+<div class="back-row" style="margin-top:14px;">
+  <a href="../Browser.html" class="back-link">← BACK TO BROWSER</a>
+</div>
+
+<script>
+const TYPE_CLASSES = {
+  fire:'t-fire', water:'t-water', grass:'t-grass', electric:'t-electric',
+  bug:'t-bug', dark:'t-dark', light:'t-light', unknown:'t-unknown'
+};
+
+function buildSprite(spriteData, size) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.classList.add('sprite-svg');
+
+  (spriteData || []).forEach(s => {
+    let el;
+    if (s.type === 'ellipse') {
+      el = document.createElementNS(ns, 'ellipse');
+      el.setAttribute('cx', s.cx); el.setAttribute('cy', s.cy);
+      el.setAttribute('rx', s.rx); el.setAttribute('ry', s.ry);
+    } else if (s.type === 'polygon') {
+      el = document.createElementNS(ns, 'polygon');
+      el.setAttribute('points', s.points);
+    } else if (s.type === 'rect') {
+      el = document.createElementNS(ns, 'rect');
+      el.setAttribute('x', s.x); el.setAttribute('y', s.y);
+      el.setAttribute('width', s.width); el.setAttribute('height', s.height);
+    }
+    if (el) { el.setAttribute('fill', s.fill); svg.appendChild(el); }
+  });
+  return svg;
+}
+
+function statPct(val, max) { return Math.min(100, Math.round(val / max * 100)); }
+
+function buildCard(mon) {
+  const wrap = document.createElement('div');
+  wrap.className = 'card-wrap';
+  wrap.dataset.type = mon.type;
+
+  const inner = document.createElement('div');
+  inner.className = 'card-inner';
+
+  // ── FRONT ──
+  const front = document.createElement('div');
+  front.className = 'card-face front';
+
+  const idDiv = document.createElement('div');
+  idDiv.className = 'card-id';
+  idDiv.textContent = '#' + String(mon.id).padStart(3, '0');
+
+  const sprite = buildSprite(mon.spriteData, 72);
+
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'card-name';
+  nameDiv.textContent = mon.name;
+
+  const badge = document.createElement('span');
+  badge.className = 'type-badge ' + (TYPE_CLASSES[mon.type] || 't-unknown');
+  badge.textContent = mon.type;
+
+  const hint = document.createElement('div');
+  hint.className = 'flip-hint';
+  hint.textContent = '[ TAP FOR STATS ]';
+
+  front.appendChild(idDiv); front.appendChild(sprite);
+  front.appendChild(nameDiv); front.appendChild(badge); front.appendChild(hint);
+
+  // ── BACK ──
+  const back = document.createElement('div');
+  back.className = 'card-face back';
+
+  const bs = mon.BattleStats || {};
+  const stats = [
+    { key: 'HP',  val: bs.health || 0, max: 20 },
+    { key: 'ATK', val: bs.attack || 0, max: 15 },
+    { key: 'DEF', val: bs.defense || 0, max: 15 },
+    { key: 'SPD', val: bs.speed || 0, max: 10 },
+  ];
+
+  const nameBack = document.createElement('div');
+  nameBack.className = 'card-name';
+  nameBack.style.marginBottom = '8px';
+  nameBack.textContent = mon.name;
+
+  const badgeBack = document.createElement('span');
+  badgeBack.className = 'type-badge ' + (TYPE_CLASSES[mon.type] || 't-unknown');
+  badgeBack.textContent = mon.type;
+  badgeBack.style.marginBottom = '8px';
+
+  const statList = document.createElement('div');
+  statList.className = 'stat-list';
+
+  stats.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    row.innerHTML = `<span class="stat-key">${s.key}</span><span class="stat-val">${s.val}</span>`;
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'stat-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'stat-bar';
+    bar.style.width = statPct(s.val, s.max) + '%';
+    barWrap.appendChild(bar);
+
+    const rowWrap = document.createElement('div');
+    rowWrap.appendChild(row);
+    rowWrap.appendChild(barWrap);
+    statList.appendChild(rowWrap);
+  });
+
+  const evoDiv = document.createElement('div');
+  evoDiv.style.cssText = 'font-size:0.55rem;color:#4ade80;opacity:0.6;margin-top:6px;text-align:center;';
+  evoDiv.textContent = `EVO TIME: ${mon.evoTime}s`;
+
+  back.appendChild(nameBack); back.appendChild(badgeBack);
+  back.appendChild(statList); back.appendChild(evoDiv);
+
+  inner.appendChild(front); inner.appendChild(back);
+  wrap.appendChild(inner);
+
+  wrap.addEventListener('click', () => wrap.classList.toggle('flipped'));
+  return wrap;
+}
+
+let allMonsters = [];
+
+function filterDex(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const grid = document.getElementById('dexGrid');
+  grid.innerHTML = '';
+  const list = type === 'all' ? allMonsters : allMonsters.filter(m => m.type === type);
+  list.forEach(m => grid.appendChild(buildCard(m)));
+}
+
+// Load monsters.json relative to this page's location (../monsters.json)
+fetch('../monsters.json')
+  .then(r => r.json())
+  .then(data => {
+    allMonsters = data;
+
+    // Build type filter buttons
+    const types = [...new Set(data.map(m => m.type))];
+    const filterBar = document.getElementById('filterBar');
+    types.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.textContent = t.toUpperCase();
+      btn.onclick = () => filterDex(t, btn);
+      filterBar.appendChild(btn);
+    });
+
+    filterDex('all', document.querySelector('.filter-btn.active'));
+  })
+  .catch(() => {
+    // Fallback if fetch fails (e.g. file:// protocol)
+    document.getElementById('dexGrid').innerHTML =
+      '<div style="color:#ff3355;font-size:0.8rem;grid-column:1/-1;text-align:center;padding:20px;">' +
+      '⚠ Could not load monster data.<br>Run via a local server or access through the Desktop Browser.</div>';
+  });
+</script>
+</body>
+</html>

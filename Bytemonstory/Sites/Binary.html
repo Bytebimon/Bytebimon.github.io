@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BINARY.LOAD — Decode Terminal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+
+    :root {
+      --green: #00ff66;
+      --green-dim: #00cc44;
+      --green-glow: rgba(0, 255, 102, 0.4);
+      --bg: #030704;
+      --bg2: #07170a;
+      --red: #ff3355;
+      --yellow: #f59e0b;
+      --panel: rgba(4, 20, 8, 0.92);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: radial-gradient(circle at center, var(--bg2) 0%, var(--bg) 100%);
+      color: var(--green);
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Binary Rain Background ── */
+    #rainCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      opacity: 0.18;
+      z-index: 0;
+    }
+
+    /* ── Main Layout ── */
+    .shell {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 10px 10px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 3px;
+      text-align: center;
+      color: var(--green);
+      text-shadow: 0 0 12px var(--green-glow);
+      margin-bottom: 4px;
+    }
+    .sub-header {
+      font-size: 0.7rem;
+      color: #4ade80;
+      opacity: 0.7;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 0.78rem;
+      color: #4ade80;
+    }
+    .stats-bar span { display: flex; align-items: center; gap: 5px; }
+    .stat-val { color: var(--green); font-weight: bold; }
+
+    /* ── Main Panel ── */
+    .panel {
+      width: 100%;
+      max-width: 460px;
+      background: var(--panel);
+      border: 1px solid rgba(0, 255, 102, 0.35);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.12), inset 0 0 12px rgba(0, 255, 102, 0.06);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: #4ade80;
+      opacity: 0.8;
+      border-bottom: 1px solid rgba(0, 255, 102, 0.2);
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+
+    /* ── Timer Bar ── */
+    .timer-wrap {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 255, 102, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #timerBar {
+      height: 100%;
+      width: 100%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green-glow);
+      transition: background 0.3s;
+      border-radius: 3px;
+    }
+
+    /* ── Target Display ── */
+    .target-section {
+      text-align: center;
+    }
+    .target-char {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.4rem;
+      color: var(--green);
+      text-shadow: 0 0 16px var(--green-glow);
+      letter-spacing: 4px;
+      min-height: 3.2rem;
+    }
+    .target-hint {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* ── Binary Stream ── */
+    .binary-stream {
+      font-size: 1.05rem;
+      letter-spacing: 3px;
+      text-align: center;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green-glow);
+      word-break: break-all;
+      line-height: 1.7;
+      min-height: 3.5rem;
+      padding: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 6px;
+      border: 1px solid rgba(0, 255, 102, 0.15);
+    }
+    .binary-stream .highlight {
+      color: #fff;
+      text-shadow: 0 0 14px var(--green);
+      background: rgba(0, 255, 102, 0.15);
+      border-radius: 3px;
+      padding: 0 2px;
+      animation: pulse-highlight 0.6s ease infinite alternate;
+    }
+    @keyframes pulse-highlight {
+      from { text-shadow: 0 0 8px var(--green); }
+      to   { text-shadow: 0 0 20px var(--green), 0 0 40px var(--green-glow); }
+    }
+
+    /* ── Choices ── */
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .choice-btn {
+      background: rgba(0, 255, 102, 0.07);
+      border: 1px solid rgba(0, 255, 102, 0.4);
+      border-radius: 6px;
+      color: var(--green);
+      padding: 10px 8px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .choice-btn:hover:not(:disabled) {
+      background: rgba(0, 255, 102, 0.18);
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+      transform: translateY(-1px);
+    }
+    .choice-btn.correct {
+      background: rgba(0, 255, 102, 0.25);
+      border-color: var(--green);
+      box-shadow: 0 0 14px var(--green-glow);
+      color: #fff;
+    }
+    .choice-btn.wrong {
+      background: rgba(255, 51, 85, 0.2);
+      border-color: var(--red);
+      color: var(--red);
+    }
+    .choice-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+
+    /* ── Result Message ── */
+    #resultMsg {
+      text-align: center;
+      font-size: 0.82rem;
+      min-height: 1.2em;
+      letter-spacing: 1px;
+    }
+    #resultMsg.good { color: var(--green); text-shadow: 0 0 8px var(--green-glow); }
+    #resultMsg.bad  { color: var(--red); }
+
+    /* ── Round / Difficulty ── */
+    .round-row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+    .diff-btn {
+      background: transparent;
+      border: 1px solid rgba(0, 255, 102, 0.3);
+      border-radius: 4px;
+      color: #4ade80;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .diff-btn.active {
+      background: rgba(0, 255, 102, 0.15);
+      border-color: var(--green);
+      color: var(--green);
+      box-shadow: 0 0 6px rgba(0, 255, 102, 0.25);
+    }
+
+    /* ── Start / Inventory ── */
+    .bottom-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      background: transparent;
+      border: 1px solid var(--green);
+      border-radius: 5px;
+      color: var(--green);
+      padding: 7px 16px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-btn:hover {
+      background: var(--green);
+      color: var(--bg);
+      box-shadow: 0 0 12px var(--green-glow);
+    }
+
+    #inventoryLog {
+      font-size: 0.72rem;
+      color: #4ade80;
+      opacity: 0.75;
+      text-align: center;
+      min-height: 1em;
+    }
+
+    /* ── Streak badge ── */
+    #streakBadge {
+      text-align: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      color: var(--yellow);
+      text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+      min-height: 1.2em;
+      letter-spacing: 2px;
+    }
+
+    /* ── Scanlines overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 102, 0.025) 2px,
+        rgba(0, 255, 102, 0.025) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="rainCanvas"></canvas>
+
+<div class="shell">
+  <div class="header">BINARY.LOAD</div>
+  <div class="sub-header">// DECODE TERMINAL v2.1 //</div>
+
+  <div class="stats-bar">
+    <span>ROUND <span class="stat-val" id="roundNum">1</span></span>
+    <span>SCORE <span class="stat-val" id="scoreNum">0</span></span>
+    <span>STREAK <span class="stat-val" id="streakNum">0</span></span>
+  </div>
+
+  <div class="panel">
+
+    <!-- Difficulty -->
+    <div>
+      <div class="section-label">DIFFICULTY</div>
+      <div class="round-row">
+        <button class="diff-btn active" id="d-easy"   onclick="setDiff('easy')">EASY</button>
+        <button class="diff-btn"        id="d-medium" onclick="setDiff('medium')">MEDIUM</button>
+        <button class="diff-btn"        id="d-hard"   onclick="setDiff('hard')">HARD</button>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-wrap"><div id="timerBar"></div></div>
+
+    <!-- Target -->
+    <div class="target-section">
+      <div class="section-label">DECODE TARGET</div>
+      <div class="target-char" id="targetChar">?</div>
+      <div class="target-hint" id="targetHint">Start a round to begin decoding</div>
+    </div>
+
+    <!-- Binary Stream -->
+    <div>
+      <div class="section-label">BINARY STREAM</div>
+      <div class="binary-stream" id="binaryStream">01001000 01101001 00100001</div>
+    </div>
+
+    <!-- Choices -->
+    <div>
+      <div class="section-label">SELECT DECODED VALUE</div>
+      <div class="choices" id="choicesGrid"></div>
+    </div>
+
+    <!-- Result -->
+    <div id="resultMsg"></div>
+
+    <!-- Streak badge -->
+    <div id="streakBadge"></div>
+
+    <!-- Inventory log -->
+    <div id="inventoryLog">Scanning for loot...</div>
+
+    <!-- Bottom buttons -->
+    <div class="bottom-row">
+      <button class="action-btn" id="startBtn" onclick="startRound()">START ROUND</button>
+      <button class="action-btn" onclick="window.location.href='../Browser.html'">← BACK</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Binary Rain ──────────────────────────────────────────────
+const rainCanvas = document.getElementById('rainCanvas');
+const rCtx = rainCanvas.getContext('2d');
+let cols = [], drops = [];
+
+function initRain() {
+  rainCanvas.width = window.innerWidth;
+  rainCanvas.height = window.innerHeight;
+  const fontSize = 13;
+  const colCount = Math.floor(rainCanvas.width / fontSize);
+  cols = Array(colCount).fill(fontSize);
+  drops = Array(colCount).fill(1);
+}
+
+function drawRain() {
+  rCtx.fillStyle = 'rgba(3, 7, 4, 0.05)';
+  rCtx.fillRect(0, 0, rainCanvas.width, rainCanvas.height);
+  rCtx.fillStyle = '#00ff66';
+  rCtx.font = '13px Share Tech Mono, monospace';
+  drops.forEach((y, i) => {
+    const ch = Math.random() > 0.5 ? '1' : '0';
+    rCtx.fillText(ch, i * 13, y * 13);
+    if (y * 13 > rainCanvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  });
+}
+initRain();
+setInterval(drawRain, 55);
+window.addEventListener('resize', initRain);
+
+// ── Game Data ─────────────────────────────────────────────────
+const CHARS = {
+  easy:   'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+  medium: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+  hard:   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()'
+};
+const DIFF_CFG = {
+  easy:   { time: 12000, distractorPool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', reward: ['A chip','D chip'] },
+  medium: { time: 8000,  distractorPool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', reward: ['S chip','Evo Script','A chip'] },
+  hard:   { time: 5000,  distractorPool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()', reward: ['Chaos chip','Data Infuser','Evo Script'] }
+};
+
+let diff = 'easy';
+let round = 1, score = 0, streak = 0;
+let timerInterval = null, timerStart = null;
+let currentAnswer = '';
+let roundActive = false;
+
+function charToBinary(ch) {
+  return ch.charCodeAt(0).toString(2).padStart(8, '0');
+}
+
+function randomChar(pool, exclude) {
+  let ch;
+  do { ch = pool[Math.floor(Math.random() * pool.length)]; } while (ch === exclude);
+  return ch;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function setDiff(d) {
+  diff = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('d-' + d).classList.add('active');
+}
+
+function buildBinaryStream(targetBin, targetChar) {
+  // Surround target with noise bytes
+  const noiseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const prefix = Array.from({length: 3}, () => charToBinary(noiseChars[Math.floor(Math.random()*noiseChars.length)]));
+  const suffix = Array.from({length: 3}, () => charToBinary(noiseChars[Math.floor(Math.random()*noiseChars.length)]));
+  const all = [...prefix, `<span class="highlight">${targetBin}</span>`, ...suffix];
+  return all.join(' ');
+}
+
+function buildChoices(answer, pool) {
+  const distractors = new Set();
+  while (distractors.size < 3) {
+    const c = randomChar(pool, answer);
+    if (c !== answer) distractors.add(c);
+  }
+  const choices = shuffle([answer, ...distractors]);
+  const grid = document.getElementById('choicesGrid');
+  grid.innerHTML = '';
+  choices.forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = ch;
+    btn.onclick = () => submitAnswer(ch, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function startRound() {
+  if (roundActive) return;
+  roundActive = true;
+  clearInterval(timerInterval);
+
+  const cfg = DIFF_CFG[diff];
+  const pool = CHARS[diff];
+  currentAnswer = pool[Math.floor(Math.random() * pool.length)];
+  const targetBin = charToBinary(currentAnswer);
+
+  document.getElementById('targetChar').textContent = '?';
+  document.getElementById('targetHint').textContent = `Find the 8-bit code shown highlighted in the stream`;
+  document.getElementById('binaryStream').innerHTML = buildBinaryStream(targetBin, currentAnswer);
+  document.getElementById('resultMsg').textContent = '';
+  document.getElementById('resultMsg').className = '';
+  document.getElementById('streakBadge').textContent = '';
+  document.getElementById('startBtn').disabled = true;
+
+  buildChoices(currentAnswer, CHARS[diff]);
+
+  // Timer
+  const bar = document.getElementById('timerBar');
+  bar.style.width = '100%';
+  bar.style.background = 'var(--green)';
+  timerStart = Date.now();
+  timerInterval = setInterval(() => {
+    const elapsed = Date.now() - timerStart;
+    const pct = Math.max(0, 100 - (elapsed / cfg.time * 100));
+    bar.style.width = pct + '%';
+    if (pct < 30) bar.style.background = 'var(--yellow)';
+    if (pct < 10) bar.style.background = 'var(--red)';
+    if (pct <= 0) {
+      clearInterval(timerInterval);
+      timeOut();
+    }
+  }, 50);
+}
+
+function submitAnswer(choice, btn) {
+  if (!roundActive) return;
+  clearInterval(timerInterval);
+  roundActive = false;
+
+  document.getElementById('targetChar').textContent = currentAnswer;
+  document.getElementById('targetHint').textContent = `ASCII ${currentAnswer.charCodeAt(0)} = ${charToBinary(currentAnswer)}`;
+  document.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; });
+
+  if (choice === currentAnswer) {
+    btn.classList.add('correct');
+    score++;
+    streak++;
+    document.getElementById('scoreNum').textContent = score;
+    document.getElementById('streakNum').textContent = streak;
+    const msg = document.getElementById('resultMsg');
+    let loot = null;
+
+    // Loot on streak milestones or random
+    const cfg = DIFF_CFG[diff];
+    if (streak % 3 === 0 || Math.random() < 0.6) {
+      loot = cfg.reward[Math.floor(Math.random() * cfg.reward.length)];
+      addItem(loot);
+      msg.textContent = `✓ CORRECT! Decoded [${currentAnswer}]. Found: [${loot}]`;
+    } else {
+      msg.textContent = `✓ CORRECT! Decoded [${currentAnswer}]. No loot this time.`;
+    }
+    msg.className = 'good';
+
+    if (streak > 0 && streak % 5 === 0) {
+      document.getElementById('streakBadge').textContent = `🔥 STREAK x${streak} — BONUS LOOT!`;
+      const bonus = DIFF_CFG['hard'].reward[Math.floor(Math.random() * DIFF_CFG['hard'].reward.length)];
+      addItem(bonus);
+    }
+
+  } else {
+    btn.classList.add('wrong');
+    // Highlight correct
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.textContent === currentAnswer) b.classList.add('correct');
+    });
+    streak = 0;
+    document.getElementById('streakNum').textContent = 0;
+    const msg = document.getElementById('resultMsg');
+    msg.textContent = `✗ WRONG. Correct was [${currentAnswer}]. Streak reset.`;
+    msg.className = 'bad';
+  }
+
+  round++;
+  document.getElementById('roundNum').textContent = round;
+  updateInventoryLog();
+
+  setTimeout(() => {
+    document.getElementById('startBtn').disabled = false;
+  }, 900);
+}
+
+function timeOut() {
+  roundActive = false;
+  document.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; });
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    if (b.textContent === currentAnswer) b.classList.add('correct');
+  });
+  document.getElementById('targetChar').textContent = currentAnswer;
+  streak = 0;
+  document.getElementById('streakNum').textContent = 0;
+  const msg = document.getElementById('resultMsg');
+  msg.textContent = `⏱ TIME OUT. Answer was [${currentAnswer}].`;
+  msg.className = 'bad';
+  round++;
+  document.getElementById('roundNum').textContent = round;
+  setTimeout(() => { document.getElementById('startBtn').disabled = false; }, 800);
+}
+
+function addItem(name) {
+  const items = JSON.parse(localStorage.getItem('mySavedItems') || '[]');
+  items.push(name);
+  localStorage.setItem('mySavedItems', JSON.stringify(items));
+}
+
+function updateInventoryLog() {
+  const items = JSON.parse(localStorage.getItem('mySavedItems') || '[]');
+  const inv = document.getElementById('inventoryLog');
+  if (items.length === 0) {
+    inv.textContent = '🎒 No items yet.';
+  } else {
+    const counts = {};
+    items.forEach(i => counts[i] = (counts[i]||0) + 1);
+    inv.textContent = '🎒 ' + Object.entries(counts).map(([k,v]) => `${k}×${v}`).join('  ');
+  }
+}
+
+// Init
+updateInventoryLog();
+document.getElementById('timerBar').style.width = '100%';
+</script>
+</body>
+</html>

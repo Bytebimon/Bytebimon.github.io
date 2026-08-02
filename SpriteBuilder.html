@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Sprite Data Editor (Multi-Shade Smooth Vectorizer)</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7329195604411751"
+     crossorigin="anonymous"></script>
+     
+    <style>
+        :root {
+            --bg-color: #1e1e2e;
+            --panel-bg: #252538;
+            --accent: #cba6f7;
+            --text: #cdd6f4;
+            --border: #414559;
+            --hover-bg: #313244;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 { margin-bottom: 5px; color: var(--accent); text-align: center; }
+        p { margin-top: 0; color: #a6adc8; text-align: center; }
+        
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            height: calc(100% - 80px);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            background: #11111b;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            box-sizing: border-box;
+        }
+        .inline-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .file-upload {
+            border: 2px dashed var(--accent);
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            background: rgba(203, 166, 247, 0.05);
+        }
+        .file-upload:hover { background: rgba(203, 166, 247, 0.1); }
+        #imageInput, #jsonInput { display: none; }
+        
+        .preview-area {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            background: #11111b;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .preview-box {
+            text-align: center;
+        }
+        .preview-box canvas, .preview-box svg {
+            background: #313244;
+            border: 1px solid var(--border);
+        }
+        button {
+            background: var(--accent);
+            color: #11111b;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+
+        .mon-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 10px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+        .mon-item {
+            padding: 10px;
+            background: #11111b;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mon-item:hover, .mon-item.active {
+            background: var(--hover-bg);
+            border-color: var(--accent);
+        }
+        .mon-item-id {
+            color: #a6adc8;
+            font-size: 0.8rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-success { background: #a6e3a1; }
+        .btn-danger { background: #f38ba8; }
+        .btn-info { background: #89b4fa; }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #585b70; }
+    </style>
+</head>
+<body>
+
+    <h1>Monster Sprite Data Editor</h1>
+    <p>Load your Update.json to manage monsters and their vector graphics.</p>
+
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <button onclick="document.getElementById('jsonInput').click()" class="btn-info">Load Update.json</button>
+            <input type="file" id="jsonInput" accept=".json">
+            
+            <button id="addBtn" style="margin-top: 15px;">+ New Monster</button>
+            
+            <div class="mon-list" id="monList">
+                <div style="text-align: center; color: #a6adc8; margin-top: 20px;">Load a JSON file to see monsters.</div>
+            </div>
+
+            <button id="exportBtn" class="btn-success" style="margin-top: auto;">Export JSON</button>
+        </div>
+
+        <!-- Main Editor Area -->
+        <div class="container">
+            <div class="panel">
+                <h3 id="editorTitle" style="margin-top: 0; color: var(--accent);">Editing: None</h3>
+                
+                <div class="inline-group form-group">
+                    <div>
+                        <label>ID</label>
+                        <input type="number" id="monId" value="">
+                    </div>
+                    <div>
+                        <label>Name</label>
+                        <input type="text" id="monName" value="">
+                    </div>
+                    <div>
+                        <label>Type</label>
+                        <input type="text" id="monType" value="">
+                    </div>
+                    <div>
+                        <label>Evo Time</label>
+                        <input type="number" id="monEvo" value="">
+                    </div>
+                </div>
+
+                <label>Battle Stats</label>
+                <div class="inline-group form-group">
+                    <input type="number" id="statAtk" placeholder="Atk" value="">
+                    <input type="number" id="statDef" placeholder="Def" value="">
+                    <input type="number" id="statSpd" placeholder="Spd" value="">
+                    <input type="number" id="statHp" placeholder="HP" value="">
+                </div>
+
+                <label>Requirements</label>
+                <div class="inline-group form-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <input type="number" id="reqAtk" placeholder="Req Atk" value="">
+                    <input type="number" id="reqDef" placeholder="Req Def" value="">
+                    <input type="number" id="reqId" placeholder="Req ID" value="">
+                </div>
+
+                <div class="file-upload" onclick="document.getElementById('imageInput').click()" style="margin-top: 20px;">
+                    <strong>Click to Upload Image (JPG, PNG, SVG) for this Monster</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 0.8rem;">Traces fine color variations and scales cleanly to a 50x50 database grid.</p>
+                    <input type="file" id="imageInput" accept=".png, .jpg, .jpeg, .svg">
+                </div>
+
+                <div class="preview-area">
+                    <div class="preview-box">
+                        <div>Source Preview</div>
+                        <canvas id="srcCanvas" style="display:none;"></canvas>
+                        <img id="srcImg" style="max-width: 150px; max-height: 150px; display:none; background: #313244;"/>
+                    </div>
+                    <div class="preview-box">
+                        <div>Vector Preview (50x50 ViewBox)</div>
+                        <svg id="vectorPreview" width="150" height="150" viewBox="0 0 50 50"></svg>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="saveBtn" class="btn-success">Save to List</button>
+                    <button id="deleteBtn" class="btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+window.customAlert = function(msg) {
+    let canvas = document.getElementById('srcCanvas');
+    if (!canvas) {
+        window.alert(msg);
+        return;
+    }
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    if (!window.ctxAlertSavedState) {
+        window.ctxAlertSavedState = ctx.getImageData(0, 0, width, height);
+    }
+    
+    window.ctxAlertActive = true;
+    
+    const boxW = Math.min(300, width * 0.8);
+    const boxH = 120;
+    const bx = (width - boxW) / 2;
+    const by = (height - boxH) / 2;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, width, height);
+    
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, boxW, boxH, 10);
+    else ctx.rect(bx, by, boxW, boxH);
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.fillStyle = '#000';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    
+    const words = msg.split(' ');
+    let line = '';
+    let ly = by + 30;
+    for (let i = 0; i < words.length; i++) {
+        let testLine = line + words[i] + ' ';
+        if (ctx.measureText(testLine).width > boxW - 20 && i > 0) {
+            ctx.fillText(line, width / 2, ly);
+            line = words[i] + ' ';
+            ly += 20;
+        } else {
+            line = testLine;
+        }
+    }
+    ctx.fillText(line, width / 2, ly);
+    
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(width / 2 - 30, by + boxH - 35, 60, 25, 5);
+    else ctx.rect(width / 2 - 30, by + boxH - 35, 60, 25);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText('Close', width / 2, by + boxH - 18);
+    
+    if (!window.ctxAlertListenerAdded) {
+        canvas.addEventListener('click', function(e) {
+            if (window.ctxAlertActive) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                
+                const boxW = Math.min(300, canvas.width * 0.8);
+                const boxH = 120;
+                const by = (canvas.height - boxH) / 2;
+                
+                if (x >= canvas.width/2 - 30 && x <= canvas.width/2 + 30 &&
+                    y >= by + boxH - 35 && y <= by + boxH - 10) {
+                    window.ctxAlertActive = false;
+                    if (window.ctxAlertSavedState) {
+                        ctx.putImageData(window.ctxAlertSavedState, 0, 0);
+                        window.ctxAlertSavedState = null;
+                    }
+                }
+            }
+        });
+        window.ctxAlertListenerAdded = true;
+    }
+};
+
+        const TARGET_SIZE = 50; 
+        const SMOOTHING_FACTOR = 0.35; 
+        
+        let masterArray = [];
+        let detectedShapes = [];
+        let currentIndex = -1; // -1 means no selection/new entry
+
+        document.getElementById('jsonInput').addEventListener('change', handleJsonLoad);
+        document.getElementById('imageInput').addEventListener('change', handleImageSelect);
+        document.getElementById('addBtn').addEventListener('click', prepareNewMonster);
+        document.getElementById('saveBtn').addEventListener('click', saveToList);
+        document.getElementById('deleteBtn').addEventListener('click', deleteMonster);
+        document.getElementById('exportBtn').addEventListener('click', exportJson);
+
+        function handleJsonLoad(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    masterArray = JSON.parse(event.target.result);
+                    if (!Array.isArray(masterArray)) {
+                        throw new Error("JSON root is not an array");
+                    }
+                    renderSidebar();
+                    prepareNewMonster();
+                    customAlert("JSON Loaded Successfully!");
+                } catch (error) {
+                    customAlert("Error parsing JSON file. Make sure it's valid: " + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('monList');
+            list.innerHTML = '';
+            
+            masterArray.forEach((mon, index) => {
+                const div = document.createElement('div');
+                div.className = 'mon-item' + (index === currentIndex ? ' active' : '');
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = mon.name || 'Unnamed';
+                
+                const idSpan = document.createElement('span');
+                idSpan.className = 'mon-item-id';
+                idSpan.textContent = `ID: ${mon.id !== undefined ? mon.id : 'N/A'}`;
+                
+                div.appendChild(nameSpan);
+                div.appendChild(idSpan);
+                
+                div.onclick = () => selectMonster(index);
+                list.appendChild(div);
+            });
+        }
+
+        function selectMonster(index) {
+            currentIndex = index;
+            const mon = masterArray[index];
+            
+            document.getElementById('editorTitle').textContent = `Editing: ${mon.name || 'Unnamed'}`;
+            
+            document.getElementById('monId').value = mon.id !== undefined ? mon.id : '';
+            document.getElementById('monName').value = mon.name || '';
+            document.getElementById('monType').value = mon.type || 'unknown';
+            document.getElementById('monEvo').value = mon.evoTime !== undefined ? mon.evoTime : 0;
+            
+            const stats = mon.BattleStats || {};
+            document.getElementById('statAtk').value = stats.attack !== undefined ? stats.attack : 0;
+            document.getElementById('statDef').value = stats.defense !== undefined ? stats.defense : 0;
+            document.getElementById('statSpd').value = stats.speed !== undefined ? stats.speed : 0;
+            document.getElementById('statHp').value = stats.health !== undefined ? stats.health : 0;
+            
+            const req = mon.requirements || {};
+            document.getElementById('reqAtk').value = req.attack !== undefined ? req.attack : 0;
+            document.getElementById('reqDef').value = req.defense !== undefined ? req.defense : 0;
+            document.getElementById('reqId').value = req.id !== undefined ? req.id : 0;
+            
+            detectedShapes = mon.spriteData || [];
+            
+            // Clear source previews when loading an existing mon (unless they just uploaded it)
+            document.getElementById('srcCanvas').style.display = 'none';
+            document.getElementById('srcImg').style.display = 'none';
+            
+            renderVectorPreview();
+            renderSidebar(); // Update active class
+        }
+
+        function prepareNewMonster() {
+            currentIndex = -1;
+            document.getElementById('editorTitle').textContent = `New Monster`;
+            
+            let nextId = 0;
+            if (masterArray.length > 0) {
+                const ids = masterArray.map(m => m.id).filter(id => id !== undefined && !isNaN(id));
+                if (ids.length > 0) nextId = Math.max(...ids) + 1;
+            }
+
+            document.getElementById('monId').value = nextId;
+            document.getElementById('monName').value = '';
+            document.getElementById('monType').value = 'unknown';
+            document.getElementById('monEvo').value = 0;
+            
+            document.getElementById('statAtk').value = 0;
+            document.getElementById('statDef').value = 0;
+            document.getElementById('statSpd').value = 0;
+            document.getElementById('statHp').value = 0;
+            
+            document.getElementById('reqAtk').value = 0;
+            document.getElementById('reqDef').value = 0;
+            document.getElementById('reqId').value = 0;
+            
+            detectedShapes = [];
+            document.getElementById('srcCanvas').style.display = 'none';
+            document.getElementById('srcImg').style.display = 'none';
+            document.getElementById('imageInput').value = '';
+            renderVectorPreview();
+            renderSidebar();
+        }
+
+        function saveToList() {
+            const newItem = {
+                id: parseInt(document.getElementById('monId').value) || 0,
+                name: document.getElementById('monName').value || "Unnamed",
+                type: document.getElementById('monType').value || "unknown",
+                BattleStats: {
+                    attack: parseInt(document.getElementById('statAtk').value) || 0,
+                    defense: parseInt(document.getElementById('statDef').value) || 0,
+                    speed: parseInt(document.getElementById('statSpd').value) || 0,
+                    health: parseInt(document.getElementById('statHp').value) || 0
+                },
+                evoTime: parseInt(document.getElementById('monEvo').value) || 0,
+                requirements: {
+                    attack: parseInt(document.getElementById('reqAtk').value) || 0,
+                    defense: parseInt(document.getElementById('reqDef').value) || 0,
+                    id: parseInt(document.getElementById('reqId').value) || 0
+                },
+                spriteData: detectedShapes
+            };
+
+            if (currentIndex === -1) {
+                masterArray.push(newItem);
+                currentIndex = masterArray.length - 1;
+            } else {
+                masterArray[currentIndex] = newItem;
+            }
+            
+            renderSidebar();
+            selectMonster(currentIndex);
+            customAlert("Saved to list! Remember to Export JSON to save changes to a file.");
+        }
+
+        function deleteMonster() {
+            if (currentIndex === -1) return;
+            if (confirm("Are you sure you want to delete this monster?")) {
+                masterArray.splice(currentIndex, 1);
+                prepareNewMonster();
+                renderSidebar();
+            }
+        }
+
+        function exportJson() {
+            if (masterArray.length === 0) {
+                customAlert("Nothing to export!");
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(masterArray, null, 4));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href",     dataStr);
+            downloadAnchorNode.setAttribute("download", "Update.json");
+            document.body.appendChild(downloadAnchorNode); // required for firefox
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        /* --- Image Processing Logic --- */
+
+        function handleImageSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            if (file.type === "image/svg+xml") {
+                reader.onload = function(event) {
+                    processSVG(event.target.result);
+                };
+                reader.readAsText(file);
+            } else {
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        processRaster(img);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function processSVG(svgText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgText, "image/svg+xml");
+            const svgElement = doc.querySelector("svg");
+            
+            detectedShapes = [];
+            const paths = svgElement.querySelectorAll('path');
+            paths.forEach(p => {
+                let fill = p.getAttribute('fill') || '#FFFFFF';
+                if (fill.toLowerCase() === '#ffffff' || fill.toLowerCase() === '#fff' || fill.toLowerCase() === 'white') return;
+                
+                detectedShapes.push({
+                    type: "path",
+                    d: p.getAttribute('d'),
+                    fill: fill
+                });
+            });
+
+            if(detectedShapes.length === 0) {
+                const img = new Image();
+                img.onload = function() { processRaster(img); };
+                img.src = 'data:image/svg+xml;base64,' + btoa(svgText);
+            } else {
+                renderVectorPreview();
+            }
+        }
+
+        function processRaster(img) {
+            const canvas = document.getElementById('srcCanvas');
+            
+            const traceSize = Math.min(400, Math.max(img.width, img.height));
+            canvas.width = traceSize;
+            canvas.height = traceSize;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, traceSize, traceSize);
+            
+            const imgDisplay = document.getElementById('srcImg');
+            imgDisplay.src = img.src;
+            imgDisplay.style.display = "block";
+
+            let wRatio = img.width / traceSize;
+            let hRatio = img.height / traceSize;
+            let useRatio = Math.max(wRatio, hRatio);
+            let renderW = Math.max(1, Math.round(img.width / useRatio));
+            let renderH = Math.max(1, Math.round(img.height / useRatio));
+            let offsetX = Math.floor((traceSize - renderW) / 2);
+            let offsetY = Math.floor((traceSize - renderH) / 2);
+
+            ctx.drawImage(img, offsetX, offsetY, renderW, renderH);
+            const imgData = ctx.getImageData(0, 0, traceSize, traceSize);
+            const data = imgData.data;
+
+            detectedShapes = [];
+            let colorGroups = {};
+
+            for (let y = 0; y < traceSize; y++) {
+                for (let x = 0; x < traceSize; x++) {
+                    const idx = (y * traceSize + x) * 4;
+                    let r = data[idx];
+                    let g = data[idx+1];
+                    let b = data[idx+2];
+                    let a = data[idx+3];
+
+                    if (a < 25) continue; 
+                    if (r > 245 && g > 245 && b > 245) continue; 
+
+                    let qr = Math.round(r / 8) * 8;
+                    let qg = Math.round(g / 8) * 8;
+                    let qb = Math.round(b / 8) * 8;
+                    let hex = rgbToHex(qr, qg, qb);
+
+                    if (!colorGroups[hex]) colorGroups[hex] = [];
+                    colorGroups[hex].push({x, y});
+                }
+            }
+
+            const scaleFactor = TARGET_SIZE / traceSize;
+
+            let sortedColors = Object.keys(colorGroups).sort((a, b) => {
+                let rgbA = hexToRgb(a);
+                let rgbB = hexToRgb(b);
+                return (rgbB.r + rgbB.g + rgbB.b) - (rgbA.r + rgbA.g + rgbA.b);
+            });
+
+            for (let color of sortedColors) {
+                let mask = Array(traceSize * traceSize).fill(false);
+                colorGroups[color].forEach(pt => {
+                    mask[pt.y * traceSize + pt.x] = true;
+                });
+
+                let processed = Array(traceSize * traceSize).fill(false);
+
+                for (let y = 0; y < traceSize; y++) {
+                    for (let x = 0; x < traceSize; x++) {
+                        if (mask[y * traceSize + x] && !processed[y * traceSize + x]) {
+                            let pathString = traceContour(x, y, mask, processed, traceSize, scaleFactor);
+                            if (pathString) {
+                                detectedShapes.push({
+                                    type: "path",
+                                    d: pathString,
+                                    fill: color
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            renderVectorPreview();
+        }
+
+        function traceContour(startX, startY, mask, processed, size, scale) {
+            let points = [];
+            let cx = startX, cy = startY;
+            let dirX = 1, dirY = 0; 
+            let iterations = 0;
+            const maxIterations = 5000;
+
+            while (iterations < maxIterations) {
+                points.push({x: cx * scale, y: cy * scale});
+                processed[cy * size + cx] = true;
+
+                let turnLeftX = dirY, turnLeftY = -dirX;
+                let nextLeftX = cx + turnLeftX, nextLeftY = cy + turnLeftY;
+
+                if (nextLeftX >= 0 && nextLeftX < size && nextLeftY >= 0 && nextLeftY < size && mask[nextLeftY * size + nextLeftX]) {
+                    dirX = turnLeftX; dirY = turnLeftY;
+                    cx = nextLeftX; cy = nextLeftY;
+                } else {
+                    let nextForwardX = cx + dirX, nextForwardY = cy + dirY;
+                    if (nextForwardX >= 0 && nextForwardX < size && nextForwardY >= 0 && nextForwardY < size && mask[nextForwardY * size + nextForwardX]) {
+                        cx = nextForwardX; cy = nextForwardY;
+                    } else {
+                        let turnRightX = -dirY, turnRightY = dirX;
+                        dirX = turnRightX; dirY = turnRightY;
+                    }
+                }
+
+                if (cx === startX && cy === startY) break;
+                iterations++;
+            }
+
+            if (points.length < 4) return null; 
+
+            points = simplifyPath(points, SMOOTHING_FACTOR);
+            if (points.length < 3) return null;
+
+            let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+            for (let i = 0; i < points.length; i++) {
+                let p1 = points[i];
+                let p2 = points[(i + 1) % points.length];
+                let midX = (p1.x + p2.x) / 2;
+                let midY = (p1.y + p2.y) / 2;
+                d += ` Q ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}, ${midX.toFixed(2)} ${midY.toFixed(2)}`;
+            }
+            d += " Z";
+            return d;
+        }
+
+        function simplifyPath(points, tolerance) {
+            if (points.length <= 2) return points;
+            let maxSqDist = 0;
+            let index = 0;
+            let end = points.length - 1;
+
+            for (let i = 1; i < end; i++) {
+                let sqDist = getSquareSegmentDistance(points[i], points[0], points[end]);
+                if (sqDist > maxSqDist) {
+                    index = i;
+                    maxSqDist = sqDist;
+                }
+            }
+
+            if (maxSqDist > tolerance * tolerance) {
+                let results1 = simplifyPath(points.slice(0, index + 1), tolerance);
+                let results2 = simplifyPath(points.slice(index), tolerance);
+                return results1.slice(0, results1.length - 1).concat(results2);
+            }
+            return [points[0], points[end]];
+        }
+
+        function getSquareSegmentDistance(p, p1, p2) {
+            let x = p1.x, y = p1.y;
+            let dx = p2.x - x, dy = p2.y - y;
+            if (dx !== 0 || dy !== 0) {
+                let t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
+                if (t > 1) { x = p2.x; y = p2.y; }
+                else if (t > 0) { x += dx * t; y += dy * t; }
+            }
+            dx = p.x - x; dy = p.y - y;
+            return dx * dx + dy * dy;
+        }
+
+        function rgbToHex(r, g, b) {
+            r = Math.max(0, Math.min(255, r));
+            g = Math.max(0, Math.min(255, g));
+            b = Math.max(0, Math.min(255, b));
+            return "#" + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join("").toUpperCase();
+        }
+
+        function hexToRgb(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        function renderVectorPreview() {
+            const svgBox = document.getElementById('vectorPreview');
+            svgBox.innerHTML = '';
+            
+            detectedShapes.forEach(shape => {
+                let el = document.createElementNS("http://www.w3.org/2000/svg", shape.type === 'rect' ? 'rect' : 'path');
+                if (shape.type === 'rect') {
+                    el.setAttribute('x', shape.x);
+                    el.setAttribute('y', shape.y);
+                    el.setAttribute('width', shape.width);
+                    el.setAttribute('height', shape.height);
+                } else if (shape.type === 'path') {
+                    el.setAttribute('d', shape.d);
+                }
+                el.setAttribute('fill', shape.fill);
+                // Only add stroke for paths, sometimes rects are used in older data
+                if (shape.type === 'path') {
+                    el.setAttribute('stroke', shape.fill);
+                    el.setAttribute('stroke-width', '0.2'); 
+                    el.setAttribute('stroke-linejoin', 'round');
+                }
+                svgBox.appendChild(el);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADVENTURE.NET — Network Map</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+
+    :root {
+      --green: #00ff66;
+      --green-dim: rgba(0, 255, 102, 0.3);
+      --bg: #030704;
+      --bg2: #07170a;
+      --red: #ff3355;
+      --yellow: #f59e0b;
+      --blue: #38bdf8;
+      --panel: rgba(4, 20, 8, 0.95);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: radial-gradient(circle at 50% 40%, #07170a, #030704 80%);
+      color: var(--green);
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Scanlines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,102,0.022) 2px, rgba(0,255,102,0.022) 4px);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── Header ── */
+    .header {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 10px 10px 4px;
+    }
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 4px;
+      color: var(--green);
+      text-shadow: 0 0 14px rgba(0,255,102,0.5);
+    }
+    .subtitle {
+      font-size: 0.65rem;
+      color: #4ade80;
+      opacity: 0.7;
+      letter-spacing: 2px;
+      margin-top: 2px;
+    }
+
+    /* ── Map SVG ── */
+    #networkSvg {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 500px;
+      height: 360px;
+    }
+
+    .node-circle {
+      cursor: pointer;
+      transition: r 0.2s;
+      filter: drop-shadow(0 0 6px rgba(0,255,102,0.5));
+    }
+    .node-circle:hover { filter: drop-shadow(0 0 14px rgba(0,255,102,0.9)); }
+
+    .node-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 8px;
+      fill: #4ade80;
+      pointer-events: none;
+    }
+
+    .edge-line {
+      stroke: rgba(0,255,102,0.18);
+      stroke-width: 1;
+      animation: edge-pulse 3s ease-in-out infinite alternate;
+    }
+    @keyframes edge-pulse {
+      from { stroke: rgba(0,255,102,0.10); }
+      to   { stroke: rgba(0,255,102,0.35); }
+    }
+
+    .data-packet {
+      fill: var(--green);
+      opacity: 0;
+    }
+
+    /* ── Log Panel ── */
+    .log-panel {
+      position: relative;
+      z-index: 2;
+      width: calc(100% - 20px);
+      max-width: 500px;
+      margin: 0 auto 8px;
+      background: var(--panel);
+      border: 1px solid rgba(0,255,102,0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      min-height: 70px;
+      max-height: 110px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      line-height: 1.6;
+      border-left: 2px solid var(--green-dim);
+      padding-left: 8px;
+      margin-bottom: 4px;
+      animation: fadeSlideIn 0.3s ease;
+    }
+    .log-entry.good { color: var(--green); border-color: var(--green); }
+    .log-entry.bad  { color: var(--red);   border-color: var(--red); }
+    .log-entry.warn { color: var(--yellow); border-color: var(--yellow); }
+    .log-entry.info { color: var(--blue);  border-color: var(--blue); }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateX(-6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── Bottom Bar ── */
+    .bottom-bar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 14px;
+      max-width: 500px;
+      margin: 0 auto;
+      font-size: 0.68rem;
+      color: #4ade80;
+      opacity: 0.8;
+    }
+    .inv-display { flex: 1; }
+    .back-link {
+      color: var(--green);
+      text-decoration: none;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border: 1px solid rgba(0,255,102,0.3);
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .back-link:hover { background: rgba(0,255,102,0.12); }
+
+    /* ── Event Modal ── */
+    #eventModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #eventModal.show { display: flex; }
+
+    .modal-box {
+      background: #050f06;
+      border: 1px solid var(--green);
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(0,255,102,0.25);
+      padding: 20px;
+      max-width: 340px;
+      width: 90%;
+      animation: modalPop 0.2s ease;
+    }
+    @keyframes modalPop {
+      from { transform: scale(0.88); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .modal-node-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      color: var(--green);
+      text-shadow: 0 0 10px rgba(0,255,102,0.5);
+    }
+    .modal-text {
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #c6f6d5;
+      margin-bottom: 14px;
+      white-space: pre-wrap;
+    }
+    .modal-result {
+      font-size: 0.78rem;
+      margin-bottom: 14px;
+      min-height: 1.4em;
+      font-weight: bold;
+    }
+    .modal-result.good { color: var(--green); }
+    .modal-result.bad  { color: var(--red); }
+    .modal-result.info { color: var(--blue); }
+
+    .modal-btn {
+      background: transparent;
+      border: 1px solid var(--green);
+      border-radius: 5px;
+      color: var(--green);
+      padding: 7px 18px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .modal-btn:hover { background: var(--green); color: var(--bg); }
+
+    /* ── Node type colors ── */
+    .node-safe    { fill: #22c55e; }
+    .node-danger  { fill: #ff3355; }
+    .node-unknown { fill: #f59e0b; }
+    .node-loot    { fill: #38bdf8; }
+    .node-hub     { fill: #a78bfa; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="title">ADVENTURE.NET</div>
+  <div class="subtitle">// DIGITAL NETWORK MAP — CLICK A NODE TO EXPLORE //</div>
+</div>
+
+<!-- SVG Network Map -->
+<svg id="networkSvg" viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg">
+  <!-- Edges -->
+  <g id="edges"></g>
+  <!-- Animated data packets -->
+  <g id="packets"></g>
+  <!-- Nodes -->
+  <g id="nodes"></g>
+</svg>
+
+<!-- Log Panel -->
+<div class="log-panel" id="logPanel">
+  <div class="log-entry info">// Network scan complete. Click any node to explore.</div>
+</div>
+
+<!-- Bottom Bar -->
+<div class="bottom-bar">
+  <div class="inv-display" id="invDisplay">🎒 Loading...</div>
+  <a href="../Browser.html" class="back-link">← EXIT</a>
+</div>
+
+<!-- Event Modal -->
+<div id="eventModal">
+  <div class="modal-box">
+    <div class="modal-node-name" id="modalTitle">NODE</div>
+    <div class="modal-text" id="modalText"></div>
+    <div class="modal-result" id="modalResult"></div>
+    <button class="modal-btn" onclick="closeModal()">DISCONNECT</button>
+  </div>
+</div>
+
+<script>
+// ── Node Definitions ─────────────────────────────────────────
+const NODES = [
+  { id: 'hub',     label: 'CORE HUB',    x: 250, y: 160, type: 'hub',     r: 14 },
+  { id: 'alpha',   label: 'ALPHA-NODE',  x: 110, y: 80,  type: 'safe',    r: 10 },
+  { id: 'beta',    label: 'BETA-NODE',   x: 390, y: 80,  type: 'safe',    r: 10 },
+  { id: 'delta',   label: 'DELTA-NODE',  x: 80,  y: 200, type: 'loot',    r: 10 },
+  { id: 'epsilon', label: 'EPSLN-NODE',  x: 420, y: 200, type: 'loot',    r: 10 },
+  { id: 'corrupt', label: 'CORR-NODE',   x: 200, y: 50,  type: 'danger',  r: 11 },
+  { id: 'ghost',   label: 'GHOST-NODE',  x: 310, y: 55,  type: 'unknown', r: 10 },
+  { id: 'omega',   label: 'OMEGA-NODE',  x: 150, y: 280, type: 'danger',  r: 11 },
+  { id: 'zeta',    label: 'ZETA-NODE',   x: 360, y: 280, type: 'unknown', r: 10 },
+  { id: 'mirror',  label: 'MIRROR-SRV',  x: 250, y: 290, type: 'safe',   r: 10 },
+];
+
+const EDGES = [
+  ['hub','alpha'], ['hub','beta'], ['hub','delta'], ['hub','epsilon'],
+  ['hub','corrupt'], ['hub','ghost'], ['hub','omega'], ['hub','zeta'],
+  ['hub','mirror'], ['alpha','corrupt'], ['beta','ghost'],
+  ['delta','omega'], ['epsilon','zeta'], ['mirror','omega'], ['mirror','zeta'],
+];
+
+// ── Events per node type ──────────────────────────────────────
+const EVENTS = {
+  safe: [
+    {
+      text: "A stable relay station hums quietly.\nFragment logs detected — data intact.\n\nDownloading residual cache...",
+      result: "✓ Found cache: +[A chip]", type: 'good',
+      action: () => addItem('A chip')
+    },
+    {
+      text: "Anti-virus subroutines patrol this sector.\nThey recognize your Ranger ID and let you pass.\n\nQuiet node. Nothing suspicious.",
+      result: "◦ No items. Safe transit logged.", type: 'info',
+      action: () => {}
+    },
+    {
+      text: "Relay node ALPHA contains fragmented stat logs.\nBit Rangers left traces here years ago.\n\nExtracting defensive protocols...",
+      result: "✓ Extracted: +[D chip]", type: 'good',
+      action: () => addItem('D chip')
+    },
+  ],
+  loot: [
+    {
+      text: "DELTA sector — known data cache.\nCorrupted packets litter the floor.\nYou sift through the wreckage carefully.\n\nNested archive found!",
+      result: "✓ Retrieved: +[S chip] + [A chip]", type: 'good',
+      action: () => { addItem('S chip'); addItem('A chip'); }
+    },
+    {
+      text: "A digital treasure node — the signal is strong.\nAn Evo Script floats in suspended packets.\n\nCapturing before it decays...",
+      result: "✓ Captured: +[Evo Script]", type: 'good',
+      action: () => addItem('Evo Script')
+    },
+    {
+      text: "EPSILON: Loot node compromised by earlier raid.\nSome fragments remain. You grab what you can.",
+      result: "✓ Salvaged: +[D chip]", type: 'good',
+      action: () => addItem('D chip')
+    },
+  ],
+  danger: [
+    {
+      text: "⚠ WARNING: CORRUPT NODE DETECTED.\nThe Embassy of Corruption has seeded malware here.\nYour Bytebimon resists — but takes damage!\n\nSTATS DRAINED.",
+      result: "✗ Player stats drained by Malware!", type: 'bad',
+      action: () => drainStats(3)
+    },
+    {
+      text: "⚠ BERSERK BYTEMON AMBUSH!\nA rogue DreGargle emerges from the corrupted data.\nYour companion buys you time to escape.\n\nPulling back...",
+      result: "✗ Escaped. Speed drained by 2.", type: 'bad',
+      action: () => drainStat('speed', 2)
+    },
+    {
+      text: "OMEGA sector: Embassy stronghold.\nCorrupted data floods your connection.\n\nYou sever the link — but not before taking hits.",
+      result: "✗ HP drained by Omega surge.", type: 'bad',
+      action: () => drainStat('hp', 15)
+    },
+  ],
+  unknown: [
+    {
+      text: "GHOST NODE. No registry.\nUnknown signal origin — fluctuating encryption.\n\nSomething is watching. Then... a data packet drops.",
+      result: "? Mysterious drop: +[Chaos chip]", type: 'info',
+      action: () => addItem('Chaos chip')
+    },
+    {
+      text: "ZETA-NODE: Libra Equilibrium territory.\nThey grant passage and leave a small offering.",
+      result: "✓ Equilibrium gift: +[Data Infuser]", type: 'good',
+      action: () => addItem('Data Infuser')
+    },
+    {
+      text: "Unregistered relay. Static fills your scanner.\nA faint beacon echoes — old Byte Ranger comms?\n\nSignal lost before you can decode it.",
+      result: "◦ Nothing gained. But lore was logged.", type: 'info',
+      action: () => {}
+    },
+  ],
+  hub: [
+    {
+      text: "CORE HUB — Central relay of the 3rd Console.\nBytemon signatures pulse through every channel.\nThis is where it all began.\n\n'The virus came through here,' the logs say.\nMillions of bytes were shredded. Bytemon were born.",
+      result: "◦ No loot. But you understand more now.", type: 'info',
+      action: () => {}
+    },
+    {
+      text: "CORE HUB SCAN COMPLETE.\nAnti-virus subroutines restored a fragment.\n\nData Infuser recovered from early Ranger logs.",
+      result: "✓ Recovered: +[Data Infuser]", type: 'good',
+      action: () => addItem('Data Infuser')
+    },
+  ]
+};
+
+// ── Render Network ─────────────────────────────────────────────
+const svg = document.getElementById('networkSvg');
+const edgeGroup = document.getElementById('edges');
+const nodeGroup = document.getElementById('nodes');
+const packetGroup = document.getElementById('packets');
+
+EDGES.forEach(([a, b]) => {
+  const na = NODES.find(n => n.id === a);
+  const nb = NODES.find(n => n.id === b);
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
+  line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
+  line.classList.add('edge-line');
+  edgeGroup.appendChild(line);
+});
+
+const typeColorMap = {
+  safe: '#22c55e', danger: '#ff3355', unknown: '#f59e0b', loot: '#38bdf8', hub: '#a78bfa'
+};
+
+NODES.forEach(node => {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('data-node', node.id);
+  g.style.cursor = 'pointer';
+
+  // Glow circle
+  const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  glow.setAttribute('cx', node.x); glow.setAttribute('cy', node.y); glow.setAttribute('r', node.r + 6);
+  glow.setAttribute('fill', typeColorMap[node.type]);
+  glow.setAttribute('opacity', '0.12');
+  glow.style.animation = `edge-pulse ${2 + Math.random() * 2}s ease-in-out infinite alternate`;
+
+  // Main circle
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y); circle.setAttribute('r', node.r);
+  circle.setAttribute('fill', typeColorMap[node.type]);
+  circle.setAttribute('opacity', '0.85');
+  circle.classList.add('node-circle');
+
+  // Inner dot
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('cx', node.x); dot.setAttribute('cy', node.y); dot.setAttribute('r', 3);
+  dot.setAttribute('fill', '#fff');
+  dot.setAttribute('opacity', '0.8');
+
+  // Label
+  const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  label.setAttribute('x', node.x);
+  label.setAttribute('y', node.y + node.r + 12);
+  label.setAttribute('text-anchor', 'middle');
+  label.classList.add('node-label');
+  label.setAttribute('fill', typeColorMap[node.type]);
+  label.textContent = node.label;
+
+  g.appendChild(glow); g.appendChild(circle); g.appendChild(dot); g.appendChild(label);
+  g.addEventListener('click', () => openNode(node));
+  g.addEventListener('mouseenter', () => {
+    circle.setAttribute('opacity', '1');
+    glow.setAttribute('opacity', '0.3');
+  });
+  g.addEventListener('mouseleave', () => {
+    circle.setAttribute('opacity', '0.85');
+    glow.setAttribute('opacity', '0.12');
+  });
+  nodeGroup.appendChild(g);
+});
+
+// Animate a data packet along a random edge
+function animatePacket() {
+  const edge = EDGES[Math.floor(Math.random() * EDGES.length)];
+  const na = NODES.find(n => n.id === edge[0]);
+  const nb = NODES.find(n => n.id === edge[1]);
+  const pkt = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  pkt.setAttribute('r', 3);
+  pkt.setAttribute('fill', '#00ff66');
+  pkt.setAttribute('opacity', '0.9');
+  packetGroup.appendChild(pkt);
+
+  let start = null;
+  const dur = 900 + Math.random() * 600;
+  function step(ts) {
+    if (!start) start = ts;
+    const t = Math.min((ts - start) / dur, 1);
+    pkt.setAttribute('cx', na.x + (nb.x - na.x) * t);
+    pkt.setAttribute('cy', na.y + (nb.y - na.y) * t);
+    pkt.setAttribute('opacity', t < 0.1 || t > 0.9 ? (t < 0.1 ? t*10 : (1-t)*10) : '0.9');
+    if (t < 1) requestAnimationFrame(step);
+    else packetGroup.removeChild(pkt);
+  }
+  requestAnimationFrame(step);
+}
+setInterval(animatePacket, 600);
+
+// ── Node interaction ──────────────────────────────────────────
+function openNode(node) {
+  const events = EVENTS[node.type] || EVENTS.safe;
+  const evt = events[Math.floor(Math.random() * events.length)];
+  document.getElementById('modalTitle').textContent = '[ ' + node.label + ' ]';
+  document.getElementById('modalText').textContent = evt.text;
+  document.getElementById('modalResult').textContent = '';
+  document.getElementById('modalResult').className = 'modal-result';
+  document.getElementById('eventModal').classList.add('show');
+
+  evt.action();
+  setTimeout(() => {
+    document.getElementById('modalResult').textContent = evt.result;
+    document.getElementById('modalResult').className = 'modal-result ' + evt.type;
+    addLog(node.label + ': ' + evt.result, evt.type);
+    updateInv();
+  }, 600);
+}
+
+function closeModal() {
+  document.getElementById('eventModal').classList.remove('show');
+}
+
+// ── Log ───────────────────────────────────────────────────────
+function addLog(text, cls) {
+  const panel = document.getElementById('logPanel');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + (cls || 'info');
+  entry.textContent = '> ' + text;
+  panel.appendChild(entry);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+// ── Item / Stat helpers ───────────────────────────────────────
+function addItem(name) {
+  const items = JSON.parse(localStorage.getItem('mySavedItems') || '[]');
+  items.push(name);
+  localStorage.setItem('mySavedItems', JSON.stringify(items));
+}
+
+function drainStats(amount) {
+  try {
+    const s = JSON.parse(localStorage.getItem('playerStats') || '{}');
+    ['attack','defense','speed','health'].forEach(k => {
+      s[k] = Math.max(0, (s[k] || 10) - amount);
+    });
+    localStorage.setItem('playerStats', JSON.stringify(s));
+  } catch(e) {}
+}
+
+function drainStat(stat, amount) {
+  try {
+    const gameData = JSON.parse(localStorage.getItem('ardumonGameData') || '{}');
+    if (gameData.currentmon) {
+      const key = stat === 'hp' ? 'hp' : stat;
+      gameData.currentmon[key] = Math.max(0, (gameData.currentmon[key] || 10) - amount);
+      localStorage.setItem('ardumonGameData', JSON.stringify(gameData));
+    }
+  } catch(e) {}
+}
+
+function updateInv() {
+  const items = JSON.parse(localStorage.getItem('mySavedItems') || '[]');
+  const inv = document.getElementById('invDisplay');
+  if (items.length === 0) { inv.textContent = '🎒 Inventory empty'; return; }
+  const counts = {};
+  items.forEach(i => counts[i] = (counts[i]||0)+1);
+  inv.textContent = '🎒 ' + Object.entries(counts).map(([k,v]) => `${k}×${v}`).join('  ');
+}
+updateInv();
+</script>
+</body>
+</html>

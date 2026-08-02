@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory — Digital Loadout</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+
+    :root {
+      --green: #00ff66;
+      --green-glow: rgba(0,255,102,0.35);
+      --bg: #030704;
+      --bg2: #07170a;
+      --panel: rgba(4, 18, 8, 0.9);
+      --red: #ff3355;
+      --yellow: #f59e0b;
+      --blue: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: radial-gradient(circle at center, var(--bg2), var(--bg) 80%);
+      color: var(--green);
+      min-height: 100vh;
+      padding: 12px 10px;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,102,0.022) 2px, rgba(0,255,102,0.022) 4px);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── Header ── */
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 3px;
+      text-align: center;
+      color: var(--green);
+      text-shadow: 0 0 12px var(--green-glow);
+      margin-bottom: 2px;
+    }
+    .subtitle {
+      font-size: 0.62rem;
+      color: #4ade80;
+      opacity: 0.65;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    /* ── Monster Panel ── */
+    .monster-panel {
+      max-width: 500px;
+      margin: 0 auto 14px;
+      background: var(--panel);
+      border: 1px solid rgba(0,255,102,0.3);
+      border-radius: 10px;
+      box-shadow: 0 0 14px rgba(0,255,102,0.08), inset 0 0 10px rgba(0,255,102,0.04);
+      padding: 14px 16px;
+    }
+    .panel-label {
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      color: #4ade80;
+      opacity: 0.7;
+      border-bottom: 1px solid rgba(0,255,102,0.2);
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+    .mon-name-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .mon-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green-glow);
+    }
+    .mon-level {
+      font-size: 0.7rem;
+      color: var(--yellow);
+      letter-spacing: 1px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .stat-label {
+      font-size: 0.6rem;
+      color: #4ade80;
+      opacity: 0.7;
+      letter-spacing: 1px;
+    }
+    .stat-value {
+      font-size: 0.9rem;
+      color: var(--green);
+      text-shadow: 0 0 6px var(--green-glow);
+    }
+    .stat-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: rgba(0,255,102,0.1);
+      border-radius: 2px;
+    }
+    .stat-bar {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--green), #00cc44);
+      box-shadow: 0 0 4px var(--green-glow);
+      transition: width 0.5s ease;
+    }
+
+    /* HP bar special */
+    .stat-bar.hp { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .stat-bar.low { background: linear-gradient(90deg, var(--red), #ff6680); }
+
+    /* ── Inventory Section ── */
+    .inv-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 500px;
+      margin: 0 auto 8px;
+      padding: 0 2px;
+    }
+    .inv-title {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: #4ade80;
+      opacity: 0.8;
+    }
+    .count-badge {
+      font-size: 0.6rem;
+      background: rgba(0,255,102,0.12);
+      border: 1px solid rgba(0,255,102,0.3);
+      border-radius: 3px;
+      padding: 2px 7px;
+      color: var(--green);
+    }
+
+    .inv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .item-card {
+      background: var(--panel);
+      border: 1px solid rgba(0,255,102,0.25);
+      border-radius: 8px;
+      padding: 12px 10px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .item-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      opacity: 0.4;
+    }
+    .item-card:hover {
+      border-color: rgba(0,255,102,0.6);
+      box-shadow: 0 0 12px rgba(0,255,102,0.15);
+      transform: translateY(-2px);
+    }
+
+    .item-icon {
+      font-size: 1.6rem;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .item-name {
+      font-size: 0.7rem;
+      color: var(--green);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .item-desc {
+      font-size: 0.55rem;
+      color: #4ade80;
+      opacity: 0.7;
+      margin-bottom: 8px;
+      min-height: 2.4em;
+      line-height: 1.5;
+    }
+    .use-btn {
+      background: transparent;
+      border: 1px solid var(--green);
+      border-radius: 4px;
+      color: var(--green);
+      padding: 5px 0;
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .use-btn:hover {
+      background: var(--green);
+      color: var(--bg);
+      box-shadow: 0 0 10px var(--green-glow);
+    }
+
+    /* ── Empty / Notification ── */
+    .empty-msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #4ade80;
+      opacity: 0.5;
+      font-size: 0.75rem;
+      padding: 20px;
+      letter-spacing: 2px;
+    }
+
+    #notification {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: rgba(4,18,8,0.97);
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      box-shadow: 0 0 20px rgba(0,255,102,0.3);
+      padding: 8px 18px;
+      font-size: 0.75rem;
+      color: var(--green);
+      letter-spacing: 1px;
+      transition: transform 0.3s ease;
+      z-index: 50;
+      white-space: nowrap;
+    }
+    #notification.show { transform: translateX(-50%) translateY(0); }
+
+    /* Item icon map */
+    /* defined inline per item name */
+  </style>
+</head>
+<body>
+
+<div class="title">DIGITAL LOADOUT</div>
+<div class="subtitle">// INVENTORY &amp; COMPANION STATUS //</div>
+
+<!-- Monster Panel -->
+<div class="monster-panel" id="monsterPanel">
+  <div class="panel-label">ACTIVE COMPANION</div>
+  <div id="monsterDisplay">
+    <div style="color:#4ade80;opacity:0.5;font-size:0.75rem;">Loading companion data...</div>
+  </div>
+</div>
+
+<!-- Inventory -->
+<div class="inv-header">
+  <span class="inv-title">ITEM REGISTRY</span>
+  <span class="count-badge" id="countBadge">0 ITEMS</span>
+</div>
+<div class="inv-grid" id="invGrid"></div>
+
+<!-- Notification toast -->
+<div id="notification"></div>
+
+<script>
+const ITEM_META = {
+  'A chip':       { icon: '⚔️',  desc: '+5 Attack to your companion.' },
+  'D chip':       { icon: '🛡️',  desc: '+5 Defense to your companion.' },
+  'S chip':       { icon: '⚡',  desc: '+5 Speed to your companion.' },
+  'Evo Script':   { icon: '📜',  desc: 'Levels up your companion (+1 LV).' },
+  'Chaos chip':   { icon: '🌀',  desc: 'Random +10 to ATK, DEF, or SPD.' },
+  'Data Infuser': { icon: '💊',  desc: 'Restores +20 HP to your companion.' },
+};
+
+let myMonster = null;
+const notifEl = document.getElementById('notification');
+let notifTimer = null;
+
+function showNotif(msg, isGood = true) {
+  notifEl.textContent = msg;
+  notifEl.style.color = isGood ? 'var(--green)' : 'var(--red)';
+  notifEl.style.borderColor = isGood ? 'var(--green)' : 'var(--red)';
+  notifEl.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => notifEl.classList.remove('show'), 2400);
+}
+
+function load() {
+  const saved = localStorage.getItem('ardumonGameData');
+  if (saved) {
+    const gd = JSON.parse(saved);
+    if (gd.currentmon) { myMonster = gd.currentmon; renderMonster(); return; }
+  }
+  myMonster = { name: 'Ardumon', attack: 10, defense: 10, speed: 10, hp: 50, level: 1 };
+  saveMonster();
+  renderMonster();
+}
+
+function saveMonster() {
+  let gd = JSON.parse(localStorage.getItem('ardumonGameData') || '{}');
+  gd.currentmon = myMonster;
+  localStorage.setItem('ardumonGameData', JSON.stringify(gd));
+}
+
+function statPct(val, max) { return Math.min(100, Math.round(val / max * 100)) + '%'; }
+
+function renderMonster() {
+  if (!myMonster) return;
+  const m = myMonster;
+  m.attack  = m.attack  || 0;
+  m.defense = m.defense || 0;
+  m.speed   = m.speed   || 0;
+  m.hp      = m.hp      || 0;
+  m.level   = m.level   || 1;
+
+  const hpPct = Math.min(100, m.hp / 100 * 100);
+  const hpClass = hpPct < 25 ? 'low' : 'hp';
+
+  document.getElementById('monsterDisplay').innerHTML = `
+    <div class="mon-name-row">
+      <span class="mon-name">${m.name}</span>
+      <span class="mon-level">LV.${m.level}</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">HP</span>
+        <span class="stat-value">${m.hp}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar ${hpClass}" style="width:${statPct(m.hp,100)}"></div></div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">ATTACK</span>
+        <span class="stat-value">${m.attack}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${statPct(m.attack,50)}"></div></div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">DEFENSE</span>
+        <span class="stat-value">${m.defense}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${statPct(m.defense,50)}"></div></div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">SPEED</span>
+        <span class="stat-value">${m.speed}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${statPct(m.speed,30)}"></div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderInventory() {
+  const items = JSON.parse(localStorage.getItem('mySavedItems') || '[]');
+  const grid = document.getElementById('invGrid');
+  grid.innerHTML = '';
+  document.getElementById('countBadge').textContent = items.length + ' ITEM' + (items.length !== 1 ? 'S' : '');
+
+  if (items.length === 0) {
+    grid.innerHTML = '<div class="empty-msg">[ NO ITEMS — SCAN THE DIGITAL WORLD ]</div>';
+    return;
+  }
+
+  items.forEach((item, idx) => {
+    const meta = ITEM_META[item] || { icon: '📦', desc: 'Unknown item.' };
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.innerHTML = `
+      <span class="item-icon">${meta.icon}</span>
+      <div class="item-name">${item}</div>
+      <div class="item-desc">${meta.desc}</div>
+      <button class="use-btn" onclick="useItem(${idx}, '${item.replace(/'/g,"\\'")}')">USE</button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function useItem(indexToRemove, itemName) {
+  if (!myMonster) { showNotif('No active companion!', false); return; }
+
+  let msg = '';
+  switch (itemName) {
+    case 'A chip':
+      myMonster.attack += 5;
+      msg = `⚔️ ${myMonster.name}'s Attack +5! (${myMonster.attack})`;
+      break;
+    case 'D chip':
+      myMonster.defense += 5;
+      msg = `🛡️ ${myMonster.name}'s Defense +5! (${myMonster.defense})`;
+      break;
+    case 'S chip':
+      myMonster.speed += 5;
+      msg = `⚡ ${myMonster.name}'s Speed +5! (${myMonster.speed})`;
+      break;
+    case 'Evo Script':
+      myMonster.level += 1;
+      msg = `📜 ${myMonster.name} levelled up! LV.${myMonster.level}`;
+      break;
+    case 'Chaos chip': {
+      const stats = ['attack','defense','speed'];
+      const s = stats[Math.floor(Math.random() * stats.length)];
+      myMonster[s] += 10;
+      msg = `🌀 Chaos! ${myMonster.name}'s ${s} +10! (${myMonster[s]})`;
+      break;
+    }
+    case 'Data Infuser':
+      myMonster.hp += 20;
+      msg = `💊 ${myMonster.name} recovered 20 HP! (${myMonster.hp})`;
+      break;
+    default:
+      msg = `Used [${itemName}] — no effect.`;
+  }
+
+  const items = JSON.parse(localStorage.getItem('mySavedItems') || '[]');
+  items.splice(indexToRemove, 1);
+  localStorage.setItem('mySavedItems', JSON.stringify(items));
+
+  saveMonster();
+  renderMonster();
+  renderInventory();
+  showNotif(msg);
+
+  // Log event to ByteWire
+  logEvent(msg);
+}
+
+function logEvent(text) {
+  try {
+    const log = JSON.parse(localStorage.getItem('bytewireLog') || '[]');
+    log.unshift({ time: new Date().toLocaleTimeString(), text });
+    if (log.length > 30) log.pop();
+    localStorage.setItem('bytewireLog', JSON.stringify(log));
+  } catch(e) {}
+}
+
+load();
+renderInventory();
+
+setInterval(() => { load(); renderInventory(); }, 3000);
+</script>
+</body>
+</html>
