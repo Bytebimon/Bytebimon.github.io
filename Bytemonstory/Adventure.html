@@ -9,20 +9,36 @@
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 14px;
+            padding: 16px;
             font-family: 'Segoe UI', Arial, sans-serif;
             background: #0b0f0c;
             color: #e2e8f0;
+            max-width: 500px;
         }
         h1 {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             margin: 0 0 4px;
             letter-spacing: 1px;
+            color: #00ff66;
         }
         p.sub {
-            margin: 0 0 12px;
-            font-size: 0.8rem;
+            margin: 0 0 16px;
+            font-size: 0.85rem;
             color: #94a3b8;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            background: #111827;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #1e293b;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .stat-highlight {
+            color: #f59e0b;
         }
         .difficulty-row {
             display: flex;
@@ -39,67 +55,81 @@
             font-weight: bold;
             font-size: 0.8rem;
             cursor: pointer;
+            transition: all 0.2s;
         }
         .diff-btn.active {
             border-color: #00ff66;
             color: #00ff66;
-            box-shadow: 0 0 8px rgba(0, 255, 102, 0.4);
+            box-shadow: 0 0 8px rgba(0, 255, 102, 0.2);
         }
         .diff-desc {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: #64748b;
-            margin: 0 0 12px;
+            margin: 0 0 16px;
             min-height: 2.2em;
         }
         canvas {
             width: 100%;
-            max-width: 460px;
             height: 60px;
             display: block;
             background: #050806;
             border: 1px solid #1e293b;
             border-radius: 6px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
         }
         .lock-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin: 10px 0;
+            gap: 12px;
+            margin: 16px 0;
         }
         #lockBtn {
-            background: transparent;
+            background: rgba(0, 255, 102, 0.1);
             color: #00ff66;
             border: 1px solid #00ff66;
-            padding: 9px 20px;
+            padding: 10px 20px;
             font-family: inherit;
             font-weight: bold;
             letter-spacing: 1px;
             text-transform: uppercase;
             border-radius: 4px;
             cursor: pointer;
+            transition: all 0.1s;
         }
         #lockBtn:hover:not(:disabled) {
             background: #00ff66;
             color: #050806;
-            box-shadow: 0 0 10px #00ff66;
+            box-shadow: 0 0 12px rgba(0, 255, 102, 0.6);
         }
         #lockBtn:disabled {
-            opacity: 0.4;
+            border-color: #475569;
+            color: #475569;
+            background: transparent;
             cursor: not-allowed;
+            box-shadow: none;
         }
         #resultText {
             font-size: 0.85rem;
-            min-height: 1.4em;
+            min-height: 2.8em;
+            flex: 1;
+            line-height: 1.4;
+        }
+        .inventory-panel {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 20px;
         }
         #ItemsGained {
             font-size: 0.85rem;
-            margin-top: 10px;
             color: #cbd5e1;
+            margin: 0 0 12px 0;
+            line-height: 1.5;
         }
         #clearBtn {
-            margin-top: 10px;
             background: #1e293b;
-            color: #cbd5e1;
+            color: #94a3b8;
             border: 1px solid #334155;
             padding: 6px 12px;
             border-radius: 4px;
@@ -108,13 +138,19 @@
         }
         #clearBtn:hover {
             background: #334155;
+            color: #fff;
         }
     </style>
 </head>
 <body>
 
     <h1>📡 DIGITAL SIGNAL SCANNER</h1>
-    <p class="sub">Pick a difficulty, then click "Lock Signal" while the needle is inside the green zone.</p>
+    <p class="sub">Time the needle in the green zone. Watch your battery!</p>
+
+    <div class="stats-row">
+        <span>⚡ Battery: <span id="batteryTxt" class="stat-highlight">100</span>%</span>
+        <span>🔥 Combo: <span id="comboTxt" class="stat-highlight">0</span>x</span>
+    </div>
 
     <div class="difficulty-row">
         <button class="diff-btn active" id="diff-easy" onclick="selectDifficulty('easy')">Easy</button>
@@ -127,11 +163,13 @@
 
     <div class="lock-row">
         <button id="lockBtn" onclick="lockSignal()">Lock Signal</button>
-        <span id="resultText">Ready to scan.</span>
+        <span id="resultText">System online. Ready to scan.</span>
     </div>
 
-    <p id="ItemsGained">🎒 Inventory: Empty</p>
-    <button id="clearBtn" onclick="clearCache()">Clear Saved Inventory</button>
+    <div class="inventory-panel">
+        <p id="ItemsGained">🎒 Inventory: Empty</p>
+        <button id="clearBtn" onclick="clearCache()">Clear Saved Inventory</button>
+    </div>
 
     <script>
         const canvas = document.getElementById('scanCanvas');
@@ -140,17 +178,15 @@
         const resultText = document.getElementById('resultText');
         const itemsGainedElement = document.getElementById('ItemsGained');
         const diffDesc = document.getElementById('diffDesc');
+        const batteryTxt = document.getElementById('batteryTxt');
+        const comboTxt = document.getElementById('comboTxt');
 
-        // ---------- Difficulty configuration ----------
-        // zoneWidth: fraction of the bar that counts as a "hit" (0-1)
-        // speed: how fast the needle sweeps (higher = faster/harder to time)
-        // successChance: chance of getting an item on a successful lock
-        // missChance: small consolation chance of a common item on a missed lock
-        // pool: weighted loot table for a successful lock
+        // ---------- Gameplay Configuration ----------
         const DIFFICULTIES = {
             easy: {
                 zoneWidth: 0.42,
                 speed: 0.9,
+                zoneSpeed: 0,
                 successChance: 0.9,
                 missChance: 0.15,
                 desc: 'Big target, slow needle. High odds, common rewards only.',
@@ -158,34 +194,39 @@
                     { name: 'A chip', weight: 40 },
                     { name: 'D chip', weight: 40 },
                     { name: 'S chip', weight: 20 }
-                ]
+                ],
+                statPenalty: 0
             },
             medium: {
                 zoneWidth: 0.24,
                 speed: 1.6,
+                zoneSpeed: 0.15,
                 successChance: 0.65,
                 missChance: 0.1,
-                desc: 'Smaller target, faster needle. Chance at Evo Scripts.',
+                desc: 'Smaller target, faster needle. Zone drifts slowly. Chance at Evo Scripts.',
                 pool: [
                     { name: 'A chip', weight: 25 },
                     { name: 'D chip', weight: 25 },
                     { name: 'S chip', weight: 25 },
                     { name: 'Evo Script', weight: 20 },
                     { name: 'Chaos chip', weight: 5 }
-                ]
+                ],
+                statPenalty: 1
             },
             hard: {
                 zoneWidth: 0.12,
                 speed: 2.4,
+                zoneSpeed: 0.4,
                 successChance: 0.4,
                 missChance: 0.05,
-                desc: 'Tiny target, fast needle. Low odds, but the best loot.',
+                desc: 'Tiny target, fast needle. Unstable zone. Low odds, best loot.',
                 pool: [
                     { name: 'Evo Script', weight: 25 },
                     { name: 'Chaos chip', weight: 35 },
                     { name: 'Data Infuser', weight: 30 },
                     { name: 'S chip', weight: 10 }
-                ]
+                ],
+                statPenalty: 2
             }
         };
         const COMMON_POOL = [
@@ -193,18 +234,38 @@
             { name: 'D chip', weight: 50 }
         ];
 
+        // ---------- State Variables ----------
         let currentDifficulty = 'easy';
-        let needlePos = 0; // 0 to 1
+        
+        let needlePos = 0; 
         let needleDir = 1;
-        let zoneStart = 0.3; // where the target zone starts (0-1)
+        
+        let zoneStart = 0.3; 
+        let zoneDir = 1;
+        
         let locked = false;
+        
+        let battery = 100;
+        const SCAN_COST = 25;
+        const BATTERY_REGEN = 0.15; // Amount regenerated per frame
+        
+        let combo = 0;
+        const MAX_COMBO_BONUS = 0.25; // +25% max success chance from combos
+
         let currentItems = JSON.parse(localStorage.getItem('mySavedItems')) || [];
 
         function refreshInventoryDisplay() {
             currentItems = JSON.parse(localStorage.getItem('mySavedItems')) || [];
-            itemsGainedElement.textContent = currentItems.length > 0
-                ? `🎒 Inventory: ${currentItems.join(', ')}`
-                : '🎒 Inventory: Empty';
+            
+            if (currentItems.length > 0) {
+                // Group items by counting duplicates for cleaner display
+                const counts = {};
+                currentItems.forEach(item => counts[item] = (counts[item] || 0) + 1);
+                const displayStrings = Object.keys(counts).map(key => `${key} (x${counts[key]})`);
+                itemsGainedElement.textContent = `🎒 Inventory:\n${displayStrings.join(', ')}`;
+            } else {
+                itemsGainedElement.textContent = '🎒 Inventory: Empty';
+            }
         }
         refreshInventoryDisplay();
 
@@ -221,6 +282,7 @@
         function randomizeZone() {
             const cfg = DIFFICULTIES[currentDifficulty];
             zoneStart = Math.random() * (1 - cfg.zoneWidth);
+            zoneDir = Math.random() > 0.5 ? 1 : -1;
         }
 
         function selectDifficulty(level) {
@@ -231,6 +293,8 @@
             randomizeZone();
             needlePos = 0;
             needleDir = 1;
+            combo = 0; // Reset combo on difficulty change
+            comboTxt.textContent = combo;
         }
 
         function drawScene() {
@@ -240,79 +304,144 @@
 
             const cfg = DIFFICULTIES[currentDifficulty];
 
-            // track
+            // Draw track
             ctx.fillStyle = '#111827';
             ctx.fillRect(0, h / 2 - 8, w, 16);
 
-            // target zone
+            // Draw target zone
             ctx.fillStyle = 'rgba(0, 255, 102, 0.35)';
             ctx.fillRect(zoneStart * w, h / 2 - 8, cfg.zoneWidth * w, 16);
 
-            // needle
+            // Draw needle
             const x = needlePos * w;
             ctx.fillStyle = locked ? '#f59e0b' : '#00ff66';
             ctx.fillRect(x - 2, h / 2 - 20, 4, 40);
+            
+            // Draw battery indicator on canvas (optional cool effect)
+            ctx.fillStyle = `rgba(0, 255, 102, ${battery/100})`;
+            ctx.fillRect(0, h - 3, (battery / 100) * w, 3);
         }
 
         function tick() {
+            const cfg = DIFFICULTIES[currentDifficulty];
+
+            // Recharge Battery
+            if (battery < 100) {
+                battery += BATTERY_REGEN;
+                if (battery > 100) battery = 100;
+                batteryTxt.textContent = Math.floor(battery);
+                
+                // Update button state based on battery
+                if (!locked && battery >= SCAN_COST) {
+                    lockBtn.disabled = false;
+                }
+            }
+
             if (!locked) {
-                const cfg = DIFFICULTIES[currentDifficulty];
+                // Move Needle
                 needlePos += needleDir * cfg.speed * 0.012;
                 if (needlePos >= 1) { needlePos = 1; needleDir = -1; }
                 if (needlePos <= 0) { needlePos = 0; needleDir = 1; }
+
+                // Drift Target Zone (if applicable)
+                if (cfg.zoneSpeed > 0) {
+                    zoneStart += zoneDir * cfg.zoneSpeed * 0.012;
+                    const maxStart = 1 - cfg.zoneWidth;
+                    if (zoneStart >= maxStart) { zoneStart = maxStart; zoneDir = -1; }
+                    if (zoneStart <= 0) { zoneStart = 0; zoneDir = 1; }
+                }
             }
+            
             drawScene();
             requestAnimationFrame(tick);
         }
 
+function applyStatPenalty() {
+            const cfg = DIFFICULTIES[currentDifficulty];
+            const penalty = cfg.statPenalty || 0;
+            if (penalty <= 0) return;
+
+            const saved = JSON.parse(localStorage.getItem('ardumonGameData') || '{}');
+            if (!saved.currentmon) return;
+
+            saved.currentmon.hp = Math.max(1, (saved.currentmon.hp || 1) - penalty);
+            saved.currentmon.attack = Math.max(1, (saved.currentmon.attack || 1) - penalty);
+            saved.currentmon.defense = Math.max(1, (saved.currentmon.defense || 1) - penalty);
+            saved.currentmon.speed = Math.max(1, (saved.currentmon.speed || 1) - penalty);
+            localStorage.setItem('ardumonGameData', JSON.stringify(saved));
+            const state = JSON.parse(localStorage.getItem('byteStoryState') || '{"missions":[],"storyLog":[]}');
+            state.storyLog.push(`Risk scan failed and cost ${penalty} stat points.`);
+            if (state.storyLog.length > 8) state.storyLog = state.storyLog.slice(-8);
+            localStorage.setItem('byteStoryState', JSON.stringify(state));
+        }
+
         function lockSignal() {
-            if (locked) return;
+            if (locked || battery < SCAN_COST) return;
+            
             locked = true;
             lockBtn.disabled = true;
+            battery -= SCAN_COST;
+            batteryTxt.textContent = Math.floor(battery);
 
             const cfg = DIFFICULTIES[currentDifficulty];
             const hit = needlePos >= zoneStart && needlePos <= zoneStart + cfg.zoneWidth;
 
             let awarded = null;
             if (hit) {
-                if (Math.random() < cfg.successChance) {
+                const comboBonus = Math.min(combo * 0.05, MAX_COMBO_BONUS); 
+                const finalChance = cfg.successChance + comboBonus;
+
+                if (Math.random() < finalChance) {
                     awarded = pickWeighted(cfg.pool);
                 }
+                combo++;
             } else {
                 if (Math.random() < cfg.missChance) {
                     awarded = pickWeighted(COMMON_POOL);
                 }
+                combo = 0;
             }
+            
+            comboTxt.textContent = combo;
 
             if (awarded) {
                 currentItems.push(awarded);
                 localStorage.setItem('mySavedItems', JSON.stringify(currentItems));
                 refreshInventoryDisplay();
-                resultText.textContent = hit
-                    ? `🎉 Signal locked! You found a [${awarded}]!`
-                    : `📶 Missed the zone, but salvaged a [${awarded}] from the noise.`;
+                
+                if (hit) {
+                    resultText.innerHTML = `🎉 <strong>Perfect Lock!</strong><br>Found: <span style="color:#00ff66">[${awarded}]</span>`;
+                } else {
+                    resultText.innerHTML = `⚠️ <strong>Missed Zone!</strong><br>Salvaged: <span style="color:#f59e0b">[${awarded}]</span> from noise.`;
+                }
             } else {
-                resultText.textContent = hit
-                    ? '📡 Signal locked, but no data came through this time.'
-                    : '❌ Missed the zone. Nothing found.';
+                if (!hit && cfg.statPenalty > 0) {
+                    applyStatPenalty();
+                }
+                resultText.innerHTML = hit
+                    ? `📡 <strong>Signal Locked!</strong><br>But the data packet was empty.`
+                    : `❌ <strong>Total Miss!</strong><br>Combo broken. The scan drained your stats.`;
             }
 
             setTimeout(() => {
                 locked = false;
-                lockBtn.disabled = false;
                 randomizeZone();
-                resultText.textContent += ' Ready for another scan.';
-            }, 1000);
+                resultText.innerHTML = 'System recalibrated.<br>Ready for another scan.';
+                if (battery < SCAN_COST) {
+                    resultText.innerHTML = '🔋 <strong>Recharging...</strong><br>Wait for battery to restore.';
+                }
+            }, 1200);
         }
 
         function clearCache() {
             localStorage.removeItem('mySavedItems');
             currentItems = [];
             refreshInventoryDisplay();
-            resultText.textContent = 'Inventory cleared.';
+            resultText.innerHTML = '🗑️ <strong>Memory Wiped.</strong><br>Inventory cleared.';
+            combo = 0;
+            comboTxt.textContent = combo;
         }
 
-        // Spacebar as an alternate way to lock the signal
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();

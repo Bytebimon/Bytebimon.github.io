@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ByteLog</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #111827, #0f172a);
+      color: #e2e8f0;
+      padding: 18px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.3);
+      max-width: 460px;
+    }
+    h1 { margin: 0 0 8px; color: #facc15; }
+    p { line-height: 1.45; color: #cbd5e1; }
+    .status { margin: 12px 0; padding: 10px; border-radius: 10px; background: rgba(30,41,59,0.8); border: 1px solid #475569; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+    .block {
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      box-shadow: inset 0 0 8px rgba(255,255,255,0.12);
+    }
+    .block.red { background: linear-gradient(135deg, #ef4444, #991b1b); }
+    .block.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .block.green { background: linear-gradient(135deg, #22c55e, #15803d); }
+    .block.yellow { background: linear-gradient(135deg, #f59e0b, #b45309); }
+    .block:disabled { opacity: 0.7; cursor: default; }
+    button.secondary {
+      margin-top: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    .dna-list { margin-top: 14px; font-size: 0.92rem; color: #bfdbfe; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧪 ByteLog</h1>
+    <p>When a rampaging Bytebimon appears, use this log to purge the corruption and collect a DNA fragment.</p>
+    <div id="status" class="status">No active breach. Watch the network.</div>
+    <div class="grid">
+      <button class="block red" data-value="red">Red</button>
+      <button class="block blue" data-value="blue">Blue</button>
+      <button class="block green" data-value="green">Green</button>
+      <button class="block yellow" data-value="yellow">Yellow</button>
+    </div>
+    <button id="restartBtn" class="secondary">Reset Sequence</button>
+    <div id="dnaList" class="dna-list"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'byteDnaFragments';
+    const ENCOUNTER_KEY = 'byteActiveEncounter';
+    const ALERT_DELAY_MIN = 60000;
+    const ALERT_DELAY_MAX = 600000;
+
+    const statusEl = document.getElementById('status');
+    const dnaListEl = document.getElementById('dnaList');
+    const buttons = Array.from(document.querySelectorAll('.block'));
+    const restartBtn = document.getElementById('restartBtn');
+
+    let currentEncounter = null;
+    let playerInput = [];
+
+    function loadFragments() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveFragments(fragments) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fragments));
+    }
+
+    function loadEncounter() {
+      try {
+        return JSON.parse(localStorage.getItem(ENCOUNTER_KEY) || 'null');
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function saveEncounter(encounter) {
+      if (encounter) {
+        localStorage.setItem(ENCOUNTER_KEY, JSON.stringify(encounter));
+      } else {
+        localStorage.removeItem(ENCOUNTER_KEY);
+      }
+    }
+
+    function randomSequence() {
+      const colors = ['red', 'blue', 'green', 'yellow'];
+      return Array.from({ length: 4 }, () => colors[Math.floor(Math.random() * colors.length)]);
+    }
+
+    function formatFragment(fragment) {
+      return `${fragment.name} (${fragment.type}) — ATK ${fragment.attack} / DEF ${fragment.defense} / SPD ${fragment.speed} / HP ${fragment.health}`;
+    }
+
+    function renderFragments() {
+      const fragments = loadFragments();
+      if (fragments.length === 0) {
+        dnaListEl.innerHTML = 'No DNA fragments saved yet.';
+        return;
+      }
+      dnaListEl.innerHTML = `Saved DNA fragments:<br>${fragments.map(formatFragment).join('<br>')}`;
+    }
+
+    function render() {
+      currentEncounter = loadEncounter();
+      if (!currentEncounter) {
+        statusEl.innerHTML = 'No active breach. Watch the network.';
+        buttons.forEach(btn => btn.disabled = true);
+        restartBtn.disabled = true;
+        return;
+      }
+
+      statusEl.innerHTML = `Rampaging Bytebimon detected! Purify it by replaying the sequence: <strong>${currentEncounter.sequence.join(' → ')}</strong>`;
+      buttons.forEach(btn => btn.disabled = false);
+      restartBtn.disabled = false;
+      playerInput = [];
+    }
+
+    function triggerAlert() {
+      const encounter = {
+        id: Date.now(),
+        sequence: randomSequence(),
+        createdAt: new Date().toISOString()
+      };
+      currentEncounter = encounter;
+      saveEncounter(encounter);
+      render();
+      alert('RAMPAGING BYTEBIMON DETECTED! Open the Log app and purify it before it spreads.');
+    }
+
+    function scheduleNextAlert() {
+      const delay = ALERT_DELAY_MIN + Math.floor(Math.random() * (ALERT_DELAY_MAX - ALERT_DELAY_MIN));
+      window.setTimeout(() => {
+        triggerAlert();
+        scheduleNextAlert();
+      }, delay);
+    }
+
+    function finalizePurification() {
+      const fragments = loadFragments();
+      const sequence = currentEncounter.sequence;
+      const fragment = {
+        id: `dna-${Date.now()}`,
+        type: ['flare', 'glitch', 'nova', 'storm'][Math.floor(Math.random() * 4)],
+        name: `Purified DNA ${fragments.length + 1}`,
+        attack: 2 + sequence.filter(c => c === 'red').length + sequence.filter(c => c === 'blue').length,
+        defense: 2 + sequence.filter(c => c === 'green').length,
+        speed: 2 + sequence.filter(c => c === 'yellow').length,
+        health: 4 + sequence.filter(c => c === 'blue').length + sequence.filter(c => c === 'green').length
+      };
+      fragments.push(fragment);
+      saveFragments(fragments);
+      saveEncounter(null);
+      currentEncounter = null;
+      render();
+      renderFragments();
+      statusEl.innerHTML = `Purification complete. DNA fragment saved: <strong>${fragment.name}</strong>`;
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!currentEncounter) return;
+        const value = btn.dataset.value;
+        playerInput.push(value);
+        const expected = currentEncounter.sequence[playerInput.length - 1];
+
+        if (value !== expected) {
+          playerInput = [];
+          statusEl.innerHTML = 'Wrong sequence. The breach is still active. Try again.';
+          return;
+        }
+
+        if (playerInput.length === currentEncounter.sequence.length) {
+          finalizePurification();
+        } else {
+          statusEl.innerHTML = `Sequence ${playerInput.length}/${currentEncounter.sequence.length} matched.`;
+        }
+      });
+    });
+
+    restartBtn.addEventListener('click', () => {
+      currentEncounter = randomSequence().length ? { id: Date.now(), sequence: randomSequence(), createdAt: new Date().toISOString() } : currentEncounter;
+      saveEncounter(currentEncounter);
+      render();
+    });
+
+    renderFragments();
+    currentEncounter = loadEncounter();
+    if (currentEncounter) {
+      render();
+    } else {
+      render();
+    }
+
+    window.addEventListener('load', () => {
+      scheduleNextAlert();
+    });
+  </script>
+</body>
+</html>

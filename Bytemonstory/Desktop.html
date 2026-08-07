@@ -225,6 +225,32 @@
             z-index: 300;
         }
 
+        .hack-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            z-index: 4000;
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        .hack-overlay.active {
+            display: flex;
+        }
+
+        .hack-overlay iframe {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            background: #000;
+        }
+
+        body.hack-active .desktop-icons,
+        body.hack-active .window,
+        body.hack-active .taskbar {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
         .start-container {
             position: relative;
         }
@@ -344,6 +370,18 @@
             <span class="icon-symbol">📡</span>
             <span class="icon-title">ByteWire</span>
         </div>
+        <div class="icon" data-icon-id="byteAi" data-window="byteAi-window">
+            <span class="icon-symbol">🤖</span>
+            <span class="icon-title">ByteAi</span>
+        </div>
+        <div class="icon" data-icon-id="missions" data-window="mission-window">
+            <span class="icon-symbol">🧭</span>
+            <span class="icon-title">Mission Board</span>
+        </div>
+        <div class="icon" data-icon-id="archive" data-window="archive-window">
+            <span class="icon-symbol">📚</span>
+            <span class="icon-title">Story Archive</span>
+        </div>
     </div>
 
     <!-- Info Window -->
@@ -359,6 +397,40 @@
             <p><strong>Status:</strong> Active</p>
             <p style="margin-top: 10px;">Welcome to your desktop interface built using pure HTML, CSS, and JavaScript.
             </p>
+        </div>
+    </div>
+
+     <!-- ByteAi Window -->
+    <div id="byteAi-window" class="window" style="top: 100px; left: 250px;">
+        <div class="window-header">
+            <span class="window-title">ByteAi</span>
+            <button class="close-btn" onclick="closeWindow('byteAi-window')">×</button>
+        </div>
+        <div class="window-body b-body">
+            <iframe src="Ai.html" width="100%" height="380px" title="Embedded Content"
+                style="border: none;"></iframe>
+        </div>
+    </div>
+
+    <!-- Mission Board Window -->
+    <div id="mission-window" class="window" style="top: 100px; left: 250px; width: 420px;">
+        <div class="window-header">
+            <span class="window-title">Mission Board</span>
+            <button class="close-btn" onclick="closeWindow('mission-window')">×</button>
+        </div>
+        <div class="window-body b-body">
+            <iframe src="MissionBoard.html" width="100%" height="380px" style="border:none;"></iframe>
+        </div>
+    </div>
+
+    <!-- Story Archive Window -->
+    <div id="archive-window" class="window" style="top: 100px; left: 250px; width: 460px;">
+        <div class="window-header">
+            <span class="window-title">Story Archive</span>
+            <button class="close-btn" onclick="closeWindow('archive-window')">×</button>
+        </div>
+        <div class="window-body b-body">
+            <iframe src="StoryArchive.html" width="100%" height="380px" style="border:none;"></iframe>
         </div>
     </div>
 
@@ -466,6 +538,10 @@
         </div>
     </div>
 
+    <div id="hackOverlay" class="hack-overlay">
+        <iframe id="hackFrame" src="Sites/Hack.html" title="Hack challenge"></iframe>
+    </div>
+
     <!-- Taskbar -->
     <div class="taskbar">
         <div class="start-container">
@@ -479,6 +555,8 @@
                 <div class="start-menu-item" onclick="launchFromMenu('battle')">🪢 ByteBattles</div>
                 <div class="start-menu-item" onclick="launchFromMenu('Web-window')">🌐 Web Browser</div>
                 <div class="start-menu-item" onclick="launchFromMenu('bytewire-window')">📡 ByteWire</div>
+                <div class="start-menu-item" onclick="launchFromMenu('mission-window')">🧭 Mission Board</div>
+                <div class="start-menu-item" onclick="launchFromMenu('archive-window')">📚 Story Archive</div>
                 <div class="start-menu-divider"></div>
                 <div class="start-menu-item" onclick="shutDown()">⏻ Shut Down</div>
             </div>
@@ -490,6 +568,32 @@
     <script>
         let highestZIndex = 10;
 
+        function showHackOverlay() {
+            const overlay = document.getElementById('hackOverlay');
+            const frame = document.getElementById('hackFrame');
+            if (!overlay || !frame) return;
+            overlay.classList.add('active');
+            document.body.classList.add('hack-active');
+            if (!frame.src || !frame.src.includes('Hack.html')) {
+                frame.src = 'Sites/Hack.html';
+            }
+        }
+
+        function hideHackOverlay() {
+            const overlay = document.getElementById('hackOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('active');
+            document.body.classList.remove('hack-active');
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'launch-hack-overlay') {
+                showHackOverlay();
+            } else if (event.data && event.data.type === 'hack-won') {
+                hideHackOverlay();
+            }
+        });
+
         const windowTitles = {
             'info-window': 'Info',
             'console-window': 'Console',
@@ -498,7 +602,9 @@
             'Item-window': 'Inventory',
             'Web-window': 'Web Browser',
             'battle': 'ByteBattles',
-            'bytewire-window': 'ByteWire'
+            'bytewire-window': 'ByteWire',
+            'mission-window': 'Mission Board',
+            'archive-window': 'Story Archive'
         };
 
         // Open and Close Window Logic
@@ -610,7 +716,11 @@
             scanner: { top: 420, left: 20 },
             items: { top: 20, left: 120 },
             battle: { top: 120, left: 120 },
-            bytewire: { top: 220, left: 120 }
+            bytewire: { top: 220, left: 120 },
+            byteAi: { top: 320, left: 120 },
+            missions: { top: 420, left: 120 },
+            archive: { top: 20, left: 220 }
+
         };
 
         function placeIcons() {
@@ -734,6 +844,12 @@
             else if (command === "launch bytewire" || command === "bytewire") {
                 openWindow('bytewire-window');
                 refreshBytewire();
+            }
+            else if (command === "launch missions" || command === "mission board") {
+                openWindow('mission-window');
+            }
+            else if (command === "launch archive" || command === "story archive") {
+                openWindow('archive-window');
             }
             else if (command === "launch desktop") {
                 closeWindow('console-window');

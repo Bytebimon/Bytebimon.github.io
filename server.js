@@ -4,6 +4,62 @@ const path = require('path');
 const crypto = require('crypto');
 const { exec } = require('child_process');
 
+function getContentType(filePath) {
+    const extname = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+        '.html': 'text/html; charset=utf-8',
+        '.htm': 'text/html; charset=utf-8',
+        '.js': 'text/javascript; charset=utf-8',
+        '.mjs': 'text/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.map': 'application/json; charset=utf-8',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+        '.wav': 'audio/wav',
+        '.mp3': 'audio/mpeg',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.txt': 'text/plain; charset=utf-8',
+        '.xml': 'application/xml; charset=utf-8',
+        '.pdf': 'application/pdf',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+        '.ttf': 'font/ttf',
+        '.otf': 'font/otf',
+        '.wasm': 'application/wasm',
+        '.exe': 'application/x-msdownload',
+        '.dll': 'application/octet-stream',
+        '.bat': 'application/x-msdownload',
+        '.cmd': 'application/x-msdownload',
+        '.msi': 'application/octet-stream',
+        '.zip': 'application/zip',
+        '.apk': 'application/vnd.android.package-archive'
+    };
+
+    return mimeTypes[extname] || 'application/octet-stream';
+}
+
+function getResponseHeaders(filePath) {
+    const contentType = getContentType(filePath);
+    const headers = {
+        'Content-Type': contentType,
+        'X-Content-Type-Options': 'nosniff'
+    };
+
+    const downloadExtensions = new Set(['.exe', '.dll', '.bat', '.cmd', '.msi', '.zip', '.apk']);
+    if (downloadExtensions.has(path.extname(filePath).toLowerCase())) {
+        headers['Content-Disposition'] = 'attachment';
+    }
+
+    return headers;
+}
+
 // Create HTTP server to serve static files and handle API requests
 const server = http.createServer((req, res) => {
     // API endpoint for packaging a folder
@@ -28,28 +84,14 @@ const server = http.createServer((req, res) => {
     // Serve static files
     let filePath = path.join(__dirname, req.url);
     if (req.url === '/') filePath = path.join(__dirname, 'index.html');
-    
-    const extname = path.extname(filePath);
-    let contentType = 'text/html';
-    switch (extname) {
-        case '.js': contentType = 'text/javascript'; break;
-        case '.css': contentType = 'text/css'; break;
-        case '.json': contentType = 'application/json'; break;
-        case '.png': contentType = 'image/png'; break;
-        case '.jpg': contentType = 'image/jpeg'; break;
-        case '.gif': contentType = 'image/gif'; break;
-        case '.wav': contentType = 'audio/wav'; break;
-        case '.mp3': contentType = 'audio/mpeg'; break;
-        case '.svg': contentType = 'image/svg+xml'; break;
-    }
-    
+
     fs.readFile(filePath, (err, content) => {
         if (err) {
             res.writeHead(404);
             res.end('File not found');
         } else {
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content, 'utf-8');
+            res.writeHead(200, getResponseHeaders(filePath));
+            res.end(content);
         }
     });
 });
@@ -194,28 +236,56 @@ const { exec } = require('child_process');
 const server = http.createServer((req, res) => {
     let filePath = path.join(__dirname, req.url);
     if (req.url === '/') filePath = path.join(__dirname, '${data.entryFile.replace(/\\/g, '/')}');
-    
-    const extname = path.extname(filePath);
-    let contentType = 'text/html';
-    switch (extname) {
-        case '.js': contentType = 'text/javascript'; break;
-        case '.css': contentType = 'text/css'; break;
-        case '.json': contentType = 'application/json'; break;
-        case '.png': contentType = 'image/png'; break;
-        case '.jpg': contentType = 'image/jpeg'; break;
-        case '.gif': contentType = 'image/gif'; break;
-        case '.wav': contentType = 'audio/wav'; break;
-        case '.mp3': contentType = 'audio/mpeg'; break;
-        case '.svg': contentType = 'image/svg+xml'; break;
+
+    const extname = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+        '.html': 'text/html; charset=utf-8',
+        '.htm': 'text/html; charset=utf-8',
+        '.js': 'text/javascript; charset=utf-8',
+        '.mjs': 'text/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.map': 'application/json; charset=utf-8',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+        '.wav': 'audio/wav',
+        '.mp3': 'audio/mpeg',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.txt': 'text/plain; charset=utf-8',
+        '.xml': 'application/xml; charset=utf-8',
+        '.pdf': 'application/pdf',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+        '.ttf': 'font/ttf',
+        '.otf': 'font/otf',
+        '.wasm': 'application/wasm',
+        '.exe': 'application/x-msdownload',
+        '.dll': 'application/octet-stream',
+        '.bat': 'application/x-msdownload',
+        '.cmd': 'application/x-msdownload',
+        '.msi': 'application/octet-stream',
+        '.zip': 'application/zip',
+        '.apk': 'application/vnd.android.package-archive'
+    };
+    const contentType = mimeTypes[extname] || 'application/octet-stream';
+    const headers = { 'Content-Type': contentType, 'X-Content-Type-Options': 'nosniff' };
+    if (['.exe', '.dll', '.bat', '.cmd', '.msi', '.zip', '.apk'].includes(extname)) {
+        headers['Content-Disposition'] = 'attachment';
     }
-    
+
     fs.readFile(filePath, (err, content) => {
         if (err) {
             res.writeHead(404);
             res.end('File not found');
         } else {
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content, 'utf-8');
+            res.writeHead(200, headers);
+            res.end(content);
         }
     });
 });

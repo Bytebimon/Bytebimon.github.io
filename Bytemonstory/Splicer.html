@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DNA Splicer</title>
+  <style>
+    body { margin:0; font-family:'Segoe UI', Arial, sans-serif; background:#020617; color:#e2e8f0; padding:18px; }
+    .card { background:rgba(15,23,42,0.95); border:1px solid #334155; border-radius:14px; padding:16px; max-width:480px; }
+    h1 { color:#38bdf8; margin-top:0; }
+    select, button { padding:8px 10px; border-radius:8px; border:none; margin-top:8px; }
+    button { background:#2563eb; color:white; cursor:pointer; }
+    .small { font-size:0.9rem; color:#cbd5e1; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧬 DNA Splicer</h1>
+    <p>Fuse a DNA fragment into your current Bytebimon to gain half of the fragment's stats.</p>
+    <label for="fragmentSelect">Choose DNA fragment</label><br>
+    <select id="fragmentSelect"></select><br>
+    <button id="spliceBtn">Fuse DNA</button>
+    <div id="message" class="small"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'byteDnaFragments';
+    const GAME_KEY = 'ardumonGameData';
+
+    function loadFragments() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (err) { return []; }
+    }
+
+    function saveFragments(fragments) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fragments));
+    }
+
+    function loadGameData() {
+      try { return JSON.parse(localStorage.getItem(GAME_KEY) || '{}'); } catch (err) { return {}; }
+    }
+
+    function saveGameData(data) {
+      localStorage.setItem(GAME_KEY, JSON.stringify(data));
+    }
+
+    function renderOptions() {
+      const fragments = loadFragments();
+      const select = document.getElementById('fragmentSelect');
+      select.innerHTML = '';
+      if (fragments.length === 0) {
+        select.innerHTML = '<option value="">No DNA fragments available</option>';
+        return;
+      }
+      fragments.forEach((fragment, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${fragment.name} (${fragment.type})`;
+        select.appendChild(option);
+      });
+    }
+
+    document.getElementById('spliceBtn').addEventListener('click', () => {
+      const fragments = loadFragments();
+      const select = document.getElementById('fragmentSelect');
+      const index = Number(select.value);
+      const message = document.getElementById('message');
+      const gameData = loadGameData();
+
+      if (!gameData.currentmon || !fragments[index]) {
+        message.textContent = 'You need a current Bytebimon and a saved DNA fragment.';
+        return;
+      }
+
+      const fragment = fragments[index];
+      const mon = gameData.currentmon;
+      mon.attack = (mon.attack || 1) + Math.floor(fragment.attack / 2);
+      mon.defense = (mon.defense || 1) + Math.floor(fragment.defense / 2);
+      mon.speed = (mon.speed || 1) + Math.floor(fragment.speed / 2);
+      mon.hp = (mon.hp || 1) + Math.floor(fragment.health / 2);
+      mon.name = `${mon.name} + ${fragment.name}`;
+
+      fragments.splice(index, 1);
+      saveFragments(fragments);
+      saveGameData(gameData);
+      renderOptions();
+      message.textContent = `Fusion complete. ${mon.name} gained half of the fragment stats.`;
+    });
+
+    renderOptions();
+  </script>
+</body>
+</html>

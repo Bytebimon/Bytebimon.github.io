@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booting ByteOS</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, #1e3a8a, #020617 70%);
+      color: #e2e8f0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      overflow: hidden;
+    }
+    .boot-card {
+      width: min(92vw, 560px);
+      padding: 24px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 18px;
+      background: rgba(2, 6, 23, 0.82);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+      text-align: center;
+    }
+    h1 { margin: 0 0 8px; color: #7dd3fc; }
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      overflow: hidden;
+      margin: 16px 0 12px;
+    }
+    .bar > div {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #22c55e);
+      transition: width 0.2s ease;
+    }
+    .status { color: #cbd5e1; min-height: 24px; }
+    .small { color: #94a3b8; font-size: 0.95rem; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="boot-card">
+    <h1>Booting ByteOS...</h1>
+    <div class="bar"><div id="progressBar"></div></div>
+    <div id="status" class="status">Initialising system modules</div>
+    <div id="detail" class="small">Preparing the desktop, story apps, and hidden network tools.</div>
+  </div>
+
+  <script>
+    const states = [
+      'Initialising system modules',
+      'Loading desktop shell',
+      'Unlocking story tools',
+      'Preparing network relay',
+      'ByteOS ready'
+    ];
+
+    const progressBar = document.getElementById('progressBar');
+    const statusEl = document.getElementById('status');
+    const detailEl = document.getElementById('detail');
+
+    function saveBootState() {
+      const state = JSON.parse(localStorage.getItem('byteProgressState') || '{}');
+      state.booted = true;
+      state.bootCount = (state.bootCount || 0) + 1;
+      localStorage.setItem('byteProgressState', JSON.stringify(state));
+    }
+
+    let index = 0;
+    function step() {
+      if (index < states.length) {
+        const pct = ((index + 1) / states.length) * 100;
+        progressBar.style.width = pct + '%';
+        statusEl.textContent = states[index];
+        if (index === states.length - 1) {
+          detailEl.textContent = 'Welcome back. New tools will appear as you advance.';
+        }
+        index += 1;
+        setTimeout(step, 450);
+      } else {
+        saveBootState();
+        setTimeout(() => {
+          window.location.href = 'Desktop.html';
+        }, 400);
+      }
+    }
+
+    step();
+  </script>
+</body>
+</html>

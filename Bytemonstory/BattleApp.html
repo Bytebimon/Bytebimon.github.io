@@ -400,8 +400,6 @@
                 <button id="StartButton" onclick="StartGame()" style="display: inline-block;">CONNECT TERMINAL</button>
                 <button id="onlineBattleButton" onclick="onlineBattle()" style="display: none;">Online Battle</button>
                 <button id="localBattleButton" onclick="localBattle()" style="display: none;">Local Battle</button>
-                <button id="changePartnerButton" onclick="openPartnerSelection()" style="display: none;">Change
-                    Partner</button>
                 <button id="settingsButton" onclick="settings()" style="display: none;">Settings</button>
                 <button id="volumeButton" onclick="volume()" style="display: none;">Volume</button>
                 <button id="updateButton" onclick="update()" style="display: none;">Update</button>
@@ -804,25 +802,20 @@
 
             let lastUpdateSignature = null;
 
-            async function loadUpdates() {
+            function loadUpdates() {
                 try {
-                    const response = await fetch('Update.json', { cache: 'no-store' });
-                    if (response.ok) {
-                        const data = await response.json();
-                        const signature = JSON.stringify(data);
-                        if (signature !== lastUpdateSignature) {
-                            const isFirstLoad = lastUpdateSignature === null;
-                            lastUpdateSignature = signature;
-                            updateMon = data;
-                            console.log("Update monsters loaded:", updateMon);
-                            if (!isFirstLoad) {
-                                console.log("New update content detected and applied.");
-                                customAlert("New monsters have been added to the wild pool!");
-                            }
+                    const signature = JSON.stringify(BaseMon);
+                    if (signature !== lastUpdateSignature) {
+                        const isFirstLoad = lastUpdateSignature === null;
+                        lastUpdateSignature = signature;
+                        updateMon = [];
+                        console.log("Loaded local monster roster.");
+                        if (!isFirstLoad) {
+                            customAlert("Monster roster refreshed.");
                         }
                     }
                 } catch (e) {
-                    console.warn("Could not load Update.json:", e);
+                    console.warn("Could not load local monster roster:", e);
                 }
             }
 

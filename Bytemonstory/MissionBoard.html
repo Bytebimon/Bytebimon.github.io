@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission Board</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #111827);
+      color: #e2e8f0;
+      padding: 18px;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.24);
+    }
+    h1 { margin: 0 0 8px; color: #7dd3fc; }
+    p { margin: 0 0 12px; color: #cbd5e1; line-height: 1.5; }
+    .mission {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: rgba(30,41,59,0.85);
+      border: 1px solid #475569;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .mission.done { border-color: #22c55e; }
+    .mission button {
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .mission button:hover { background: #1d4ed8; }
+    .status { font-size: 0.86rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📜 Mission Board</h1>
+    <p>Track your current tasks and the story milestones you have already completed.</p>
+    <div id="missionList"></div>
+  </div>
+
+  <script>
+    function getStoryState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('byteStoryState') || '{}');
+        return {
+          missions: saved.missions || [
+            { id: 'boot', title: 'Boot the desktop', done: false, note: 'Start the system and open the console.' },
+            { id: 'scan', title: 'Scan the digital world', done: false, note: 'Complete a signal scan in Adventure.' },
+            { id: 'relay', title: 'Secure the Relay Lab', done: false, note: 'Prime the relay and stabilize the signal.' },
+            { id: 'archive', title: 'Unlock the Story Archive', done: false, note: 'Open the archive and reveal the next chapter.' }
+          ],
+          storyLog: saved.storyLog || []
+        };
+      } catch (err) {
+        return { missions: [], storyLog: [] };
+      }
+    }
+
+    function saveStoryState(state) {
+      localStorage.setItem('byteStoryState', JSON.stringify(state));
+    }
+
+    function markMissionDone(id, note) {
+      const state = getStoryState();
+      const target = state.missions.find(m => m.id === id);
+      if (target) {
+        target.done = true;
+        state.storyLog.push(note || `Completed ${target.title}`);
+        if (state.storyLog.length > 8) state.storyLog = state.storyLog.slice(-8);
+      }
+      saveStoryState(state);
+      renderMissions();
+    }
+
+    function renderMissions() {
+      const state = getStoryState();
+      const missionList = document.getElementById('missionList');
+      missionList.innerHTML = state.missions.map(mission => `
+        <div class="mission ${mission.done ? 'done' : ''}">
+          <div>
+            <strong>${mission.title}</strong><br>
+            <span class="status">${mission.note}</span>
+          </div>
+          <button onclick="markMissionDone('${mission.id}', 'Completed ${mission.title}')">${mission.done ? 'Done' : 'Complete'}</button>
+        </div>
+      `).join('');
+    }
+
+    renderMissions();
+  </script>
+</body>
+</html>

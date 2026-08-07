@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bytebimon Handbook</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --panel: #111827;
+      --panel2: #1f2937;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent2: #f59e0b;
+      --good: #22c55e;
+      --bad: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg), #0f172a);
+      color: var(--text);
+      line-height: 1.55;
+      padding: 24px;
+    }
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.32);
+    }
+    .hero {
+      background: linear-gradient(135deg, #0f172a, #1d4ed8);
+      padding: 24px 28px;
+    }
+    .hero h1 { margin: 0 0 6px; font-size: 2rem; color: #f8fafc; }
+    .hero p { margin: 0; color: #bfdbfe; }
+    .content { padding: 24px 28px 32px; }
+    h2 { color: var(--accent); margin-top: 24px; margin-bottom: 8px; }
+    h3 { color: #f8fafc; margin-top: 18px; margin-bottom: 6px; }
+    .card {
+      background: var(--panel2);
+      border: 1px solid #475569;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    code, .cmd {
+      background: rgba(15, 23, 42, 0.85);
+      color: #fef3c7;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+    }
+    ul { margin: 8px 0 8px 18px; }
+    li { margin-bottom: 6px; }
+    .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(56,189,248,0.18); color: #bae6fd; margin-right: 6px; margin-bottom: 6px; font-size: 0.9rem; }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="hero">
+      <h1>Bytebimon Handbook</h1>
+      <p>A complete guide to the desktop apps, story systems, DNA tools, and console commands inside the Byte network.</p>
+    </div>
+
+    <div class="content">
+      <div class="card">
+        <h2>Quick Start</h2>
+        <ul>
+          <li>Open the desktop and click the app icons to launch tools such as the browser, battle app, scanner, mission board, log, and splicer.</li>
+          <li>Use the console window to run commands like <span class="cmd">launch byte.exe</span> or <span class="cmd">help?</span>.</li>
+          <li>When a rampaging Bytebimon appears, open the Log app and complete the purification mini-game to collect a DNA fragment.</li>
+          <li>Use the Splicer app to fuse a DNA fragment into your current Bytebimon and increase its stats.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Desktop Apps</h2>
+
+        <h3>Byte.exe</h3>
+        <p>The main game window for your Bytebimon experience. Use it to hatch, feed, train, battle, and evolve your current partner.</p>
+
+        <h3>Web Browser</h3>
+        <p>Browse the in-world web. Enter commands such as <span class="cmd">binary.load</span>, <span class="cmd">calculator.com</span>, or <span class="cmd">bytebimon.com</span>.</p>
+        <p class="muted">Note: the special hack event can appear randomly while browsing. It opens as a full-screen overlay only for that event.</p>
+
+        <h3>DigitalScanner</h3>
+        <p>This is the adventure scanner. It features a timing mini-game where you lock on at the right moment to collect loot. If you fail on harder difficulties, your stats can drop.</p>
+
+        <h3>ByteAi</h3>
+        <p>Ask it about missions, story progress, Bytebimon lore, combat, and the current state of the network. It can tell you what missions are active or completed.</p>
+
+        <h3>Mission Board</h3>
+        <p>Track your story missions. You can mark tasks as complete and keep your progress organized as you play.</p>
+
+        <h3>Story Archive</h3>
+        <p>Read the ongoing story beats and unlock more of the narrative as the desktop world expands.</p>
+
+        <h3>Log</h3>
+        <p>This app handles random rampaging Bytebimon alerts. When one appears, you must solve a 4-block sequence puzzle to purify the threat and collect a DNA fragment.</p>
+
+        <h3>Splicer</h3>
+        <p>Fuse a saved DNA fragment into your current Bytebimon. This gives your monster half of the fragment’s stat values. If you collect three matching DNA fragments, the current monster can evolve.</p>
+      </div>
+
+      <div class="card">
+        <h2>How the DNA System Works</h2>
+        <ul>
+          <li>Each successful purification event awards a DNA fragment.</li>
+          <li>Fragments are stored locally in the browser and remain available until you clear them.</li>
+          <li>The Splicer app lets you fuse one fragment into your current Bytebimon.</li>
+          <li>Fusion adds half of the fragment's stats to your monster.</li>
+          <li>Three matching fragments can be used to trigger an evolution path for the current mon.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Console Commands</h2>
+        <ul>
+          <li><span class="cmd">launch byte.exe</span> — opens the main Bytebimon game.</li>
+          <li><span class="cmd">launch info</span> — opens the system info window.</li>
+          <li><span class="cmd">web</span> — opens the browser.</li>
+          <li><span class="cmd">launch battle</span> — opens the battle app.</li>
+          <li><span class="cmd">launch scanner</span> — opens the adventure scanner.</li>
+          <li><span class="cmd">launch inventory</span> — opens the inventory.</li>
+          <li><span class="cmd">launch bytewire</span> — opens the event feed.</li>
+          <li><span class="cmd">launch log</span> — opens the Log app.</li>
+          <li><span class="cmd">launch splicer</span> — opens the Splicer app.</li>
+          <li><span class="cmd">min_ramp</span> — displays the remaining time until the next rampaging Bytebimon alert.</li>
+          <li><span class="cmd">help?</span> — opens the story/help flow.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>How to Use the Log and Splicer</h2>
+        <ol>
+          <li>Keep the desktop open and wait for the alert.</li>
+          <li>When an alert appears, open the Log app.</li>
+          <li>Replay the 4-block color sequence in the same order to purify the threat.</li>
+          <li>Once purified, a DNA fragment is added to your saved collection.</li>
+          <li>Open the Splicer app and choose a saved fragment.</li>
+          <li>Fuse it into your current Bytebimon to boost its stats.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2>Tips</h2>
+        <ul>
+          <li>Use the scanner and log systems regularly to build your collection of DNA and resources.</li>
+          <li>Save progression by keeping the browser tab open; most progress is stored locally in your browser.</li>
+          <li>If you want a stronger partner, focus on saving multiple fragments and fusing them carefully.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

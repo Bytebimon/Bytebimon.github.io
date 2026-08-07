@@ -5,8 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bytebimon Browser</title>
-    <link rel="stylesheet" href="index.css" />
-    <script src="browser.js" defer></script>
+    <link rel="stylesheet" href="../style.css" />
+    <script src="./browser.js" defer></script>
 </head>
 
 <body>
@@ -28,7 +28,6 @@
 
         <p>You can visit sites such as:</p>
         <ul>
-            <li>hack.net</li>
             <li>binary.load</li>
             <li>adventure.net</li>
             <li>news</li>
@@ -39,39 +38,6 @@
         <iframe id="webView" src="about:blank" sandbox="allow-same-origin allow-scripts allow-forms"
             style="width:100%; height:80vh; border:none;"></iframe>
     </div>
-
-    <script>
-        const form = document.getElementById('actionForm');
-        const webView = document.getElementById('webView');
-
-        // Route dictionary mapping commands (lowercase) to local file paths
-        const siteRoutes = {
-            "hack.net": "Sites/Hack.html",
-            "binary.load": "Sites/Binary.html",
-            "adventure.net": "Sites/online.html",
-            "news": "Sites/News.html",
-            "calculator.com": "Sites/Calculator.html",
-            "bytebimon.com": "Sites/Bytebimon.html",
-        };
-
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            // Clean input by trimming and converting to lowercase
-            const command = document.getElementById('userInput').value.trim().toLowerCase();
-
-            // Check if the command exists in our routes
-            if (siteRoutes[command]) {
-                // Update the iframe source instead of redirecting the entire page
-                webView.src = siteRoutes[command];
-            } else {
-                console.warn(`Command not recognized: ${command}`);
-            }
-
-            // Clear input after execution
-            document.getElementById('userInput').value = "";
-        });
-    </script>
 
 </body>
 

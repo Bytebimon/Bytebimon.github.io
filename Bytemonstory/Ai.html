@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteAi Chat</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Welcome to ByteAi</h1>
+            <p>Ask me anything about Bytebimon!</p>
+        </div>
+
+        <!-- This is where chat messages will appear -->
+        <div id="chat-window" class="chat-window">
+            <div class="message bot-message">
+                Hello, I am ByteAi, your digital assistant. I can provide information about most things that are here.
+            </div>
+        </div>
+
+        <!-- This is the input area -->
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Ask about anything related to Bytebimon..." autofocus>
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Wait for the DOM to load completely before running JS
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const inputField = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-btn');
+            const chatWindow = document.getElementById('chat-window');
+
+            // Function to add a message to the chat window
+            function addMessage(message, sender) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+                messageElement.textContent = message;
+                
+                chatWindow.appendChild(messageElement);
+
+                // Auto-scroll to the bottom
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            // --- EXPANDED GAME KNOWLEDGE BASE ---
+            function getBotResponse(userText) {
+                const normalizedText = userText.toLowerCase();
+                const state = JSON.parse(localStorage.getItem('byteStoryState') || '{"missions":[],"storyLog":[]}');
+                const missions = state.missions || [];
+                const completed = missions.filter(m => m.done).map(m => m.title);
+                const pending = missions.filter(m => !m.done).map(m => m.title);
+
+                if (normalizedText.includes('hello') || normalizedText.includes('hi') || normalizedText.includes('initialize')) {
+                    return 'Greetings, I am ByteAi, your digital assistant. I can guide your missions, explain Bytebimon lore, and help you make sense of the new story apps.';
+                }
+
+                if (normalizedText.includes('mission') || normalizedText.includes('missions') || normalizedText.includes('what do i need to do')) {
+                    if (pending.length === 0) {
+                        return 'All tracked missions are complete. Your current story log is clean and the archive is ready for the next chapter.';
+                    }
+                    return `Your active missions are: ${pending.join(', ')}. Completed missions: ${completed.length > 0 ? completed.join(', ') : 'none yet'}.`;
+                }
+
+                if (normalizedText.includes('done') || normalizedText.includes('completed')) {
+                    if (completed.length === 0) {
+                        return 'You have not completed any missions yet. Start by opening the console, scanning the digital world, or using the Mission Board.';
+                    }
+                    return `You have completed: ${completed.join(', ')}.`;
+                }
+
+                if (normalizedText.includes('what are bytebimon') || normalizedText.includes('what is a bytebimon')) {
+                    return 'Bytebimon are digital lifeforms born from code and glitches. As a Ranger, your role is to befriend, guide, and purify them while uncovering deeper story layers.';
+                }
+
+                if (normalizedText.includes('the glitch') || normalizedText.includes('what is the glitch')) {
+                    return 'The Glitch is a shadowy force that distorts the network. It makes some Bytebimon unstable, which is why your missions, scans, and relic hunts matter so much.';
+                }
+
+                if (normalizedText.includes('how to battle') || normalizedText.includes('combat') || normalizedText.includes('fight')) {
+                    return 'Combat is turn-based. Use the battle app, scan for weaknesses, and build your stats. In the adventure app, risky scans can reward loot but may cost stats if you fail.';
+                }
+
+                if (normalizedText.includes('what is byte-dex') || normalizedText.includes('bytedex')) {
+                    return 'The Byte-Dex is your personal HUD database. It stores details on Bytebimon, stats, story progress, and the apps you unlock.';
+                }
+
+                if (normalizedText.includes('evolve') || normalizedText.includes('evolution') || normalizedText.includes('level up')) {
+                    return 'Bytebimon evolve when they gain enough experience and stability. The more missions and scans you complete, the stronger your bond and your data network become.';
+                }
+
+                if (normalizedText.includes('items') || normalizedText.includes('inventory') || normalizedText.includes('capsule') || normalizedText.includes('potion')) {
+                    return 'You can collect relics like Bit-Capsules, Evo Scripts, Chaos Chips, and Data Infusers through the scanner and story apps.';
+                }
+
+                if (normalizedText.includes('sector') || normalizedText.includes('network') || normalizedText.includes('map')) {
+                    return 'The digital world is now expanding with mission apps, a story archive, and a relay network. New sectors open as your progress grows.';
+                }
+
+                if (normalizedText.includes('what is this') || normalizedText.includes('byteos')) {
+                    return 'This is your ByteOS, a digital operating system that lets you run story apps, follow missions, manage Bytebimon, and uncover the next layer of the network.';
+                }
+
+                if (normalizedText.includes('who made this') || normalizedText.includes('who created')) {
+                    return 'The network was forged from a glitch that tried to preserve itself. From that fracture, the digital world and your mission system emerged.';
+                }
+
+                if (normalizedText.includes('where am i') || normalizedText.includes('what is the digital world')) {
+                    return 'You are inside the Byte network, a living digital world where Rangers, missions, relics, and story apps all interact.';
+                }
+
+                if (normalizedText.includes('secret') || normalizedText.includes('cheat') || normalizedText.includes('admin')) {
+                    return 'A hidden relay remains active. If you continue the mission chain, the archive will reveal the next secret.';
+                }
+
+                return `Query recognized: "${userText}". I can help with missions, story progress, and the new apps. Try asking about 'missions', 'completed', 'Bytebimon', 'combat', or 'story'.`;
+            }
+
+            // Function to handle sending the message
+            function handleSend() {
+                const userText = inputField.value.trim();
+                if (userText === "") return; // Don't send empty messages
+
+                // 1. Add user message
+                addMessage(userText, 'user');
+                inputField.value = ''; // Clear input
+
+                // 2. Simulate bot thinking delay (1 second)
+                setTimeout(() => {
+                    const botReply = getBotResponse(userText);
+                    addMessage(botReply, 'bot');
+                }, 1000);
+            }
+
+            // Event Listener for the Send Button
+            sendButton.addEventListener('click', handleSend);
+
+            // Event Listener for pressing 'Enter' inside the input box
+            inputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleSend();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

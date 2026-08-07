@@ -169,7 +169,6 @@
 
         <div class="stats" id="stats"></div>
 
-        <a href="../Browser.html" class="back">← Abort & Return</a>
     </div>
 
     <script>
@@ -236,6 +235,14 @@
             localStorage.setItem('playerStats', JSON.stringify(playerStats));
         };
 
+        const returnToDesktop = () => {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'hack-won' }, '*');
+            } else {
+                window.location.href = '../Desktop.html';
+            }
+        };
+
         const handleSpace = (e) => {
             if (e.code !== 'Space') return;
             const width = parseFloat(progressBar.style.width);
@@ -243,9 +250,10 @@
             if (isInGreen(width)) {
                 msgEl.textContent = '[ SUCCESS: MALWARE PURGED ]';
                 msgEl.style.color = 'var(--green)';
-                // Fixed spelling of window.location
                 setTimeout(() => {
-                    window.location.href = "../Browser.html";
+                    returnToDesktop();
+                    window.location.href = '../Browser.html';
+                
                 }, 800);
             } else {
                 msgEl.textContent = '[ ERROR: DATA CORRUPTED. STATS DRAINED! ]';
@@ -256,6 +264,10 @@
             setTimeout(() => { msgEl.textContent = ''; }, 1500);
         };
         window.addEventListener('keydown', handleSpace);
+
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'launch-hack-overlay' }, '*');
+        }
     </script>
 </body>
 

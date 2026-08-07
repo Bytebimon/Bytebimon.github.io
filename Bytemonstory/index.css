@@ -1,0 +1,55 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #07110d;
+  color: #d7ffe8;
+}
+
+.browser-shell {
+  padding: 16px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  background: #0f241a;
+  border: 1px solid #2f6b44;
+  border-radius: 6px;
+  padding: 6px 10px;
+  flex: 1;
+}
+
+.input-group input {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  outline: none;
+  width: 100%;
+}
+
+button {
+  background: #1d6b3d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+iframe {
+  border: 1px solid #2d5b3f;
+  border-radius: 8px;
+  background: white;
+}
