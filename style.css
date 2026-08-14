@@ -1,6 +1,13 @@
-/* Shared site stylesheet for ByteBimon's simpler pages
-   (Home/About/Contact style pages already ship their own <style> blocks;
-   this file backs the pages that link to style.css directly.) */
+:root {
+    color-scheme: dark;
+    --bg: #07111f;
+    --panel: rgba(8, 17, 33, 0.92);
+    --panel-soft: rgba(15, 23, 42, 0.8);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #7dd3fc;
+    --accent-2: #34d399;
+}
 
 * {
     box-sizing: border-box;
@@ -8,59 +15,261 @@
 
 body {
     margin: 0;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #dbeafe, #fdf2f8);
-    color: #1f2937;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #020617 70%);
+    color: var(--text);
+    line-height: 1.6;
 }
 
+/* Common containers */
+main, .main-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Nav styles */
 nav {
-    width: 100%;
-    text-align: center;
-    padding: 10px 0 20px;
-    font-size: 0.95rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px 24px;
+    background: rgba(2, 6, 23, 0.9);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    justify-content: center;
 }
 
 nav a {
-    color: #1d4ed8;
+    color: var(--accent);
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 600;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 nav a:hover {
-    text-decoration: underline;
+    color: var(--accent-2);
+    text-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
 }
 
-h1, h2, h3 {
-    color: #1f2937;
+/* Typography */
+h1, h2, h3, h4 {
+    color: #ffffff;
+    margin-top: 0;
+}
+
+h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 a {
-    color: #1d4ed8;
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+a:hover {
+    color: var(--accent-2);
+}
+
+/* Panels and Cards */
+.panel, .card, .chat-container, .browser-shell {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* Lists and details */
+ul {
+    padding-left: 20px;
+}
+
+li {
+    margin-bottom: 8px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+/* Buttons */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 18px 0;
+    justify-content: center;
+}
+
+button, .button {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: #02111c;
+}
+
+button:hover, .button:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 0 12px rgba(125, 211, 252, 0.4);
+}
+
+button.secondary, .button.secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.16);
+}
+
+button.secondary:hover, .button.secondary:hover {
+    background: rgba(255,255,255,0.15);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 img {
     max-width: 100%;
     height: auto;
+    border-radius: 12px;
+    display: block;
+    margin: 0 auto 16px;
+    border: 1px solid rgba(255,255,255,0.12);
 }
 
-.action-buttons {
+/* AI Chat UI support */
+.chat-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin: 16px 0;
+    flex-direction: column;
+    height: 80vh;
+    max-height: 700px;
+    padding: 16px;
 }
 
-.action-buttons button {
+.chat-header {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+}
+
+.chat-window {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message {
+    padding: 12px 16px;
+    border-radius: 14px;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+.bot-message {
+    background: var(--panel-soft);
+    align-self: flex-start;
+    border: 1px solid rgba(125, 211, 252, 0.2);
+}
+
+.user-message {
+    background: rgba(52, 211, 153, 0.15);
+    align-self: flex-end;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.input-area {
+    display: flex;
+    gap: 8px;
+}
+
+.input-area input, .input-group input {
+    flex: 1;
+    background: rgba(2, 6, 23, 0.6);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text);
     padding: 10px 16px;
-    border-radius: 8px;
-    border: 1px solid #94a3b8;
-    background: #f8fafc;
-    font-weight: bold;
-    cursor: pointer;
+    border-radius: 999px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease;
 }
 
-.action-buttons button:hover {
-    background: #e2e8f0;
+.input-area input:focus, .input-group input:focus {
+    border-color: var(--accent);
+}
+
+/* Browser UI support */
+.browser-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: var(--panel-soft);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.toolbar form {
+    display: flex;
+    flex: 1;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background: rgba(2, 6, 23, 0.6);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    padding: 2px 16px;
+    flex: 1;
+}
+
+.input-group label {
+    margin-right: 8px;
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.input-group input {
+    background: transparent;
+    border: 0;
+    padding: 8px 0;
+}
+
+iframe {
+    background: #020617;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
 }

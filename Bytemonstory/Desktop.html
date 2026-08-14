@@ -539,7 +539,7 @@
     </div>
 
     <div id="hackOverlay" class="hack-overlay">
-        <iframe id="hackFrame" src="Sites/Hack.html" title="Hack challenge"></iframe>
+        <iframe id="hackFrame" src="about:blank" title="Hack challenge"></iframe>
     </div>
 
     <!-- Taskbar -->
@@ -581,9 +581,11 @@
 
         function hideHackOverlay() {
             const overlay = document.getElementById('hackOverlay');
+            const frame = document.getElementById('hackFrame');
             if (!overlay) return;
             overlay.classList.remove('active');
             document.body.classList.remove('hack-active');
+            if (frame) frame.src = 'about:blank';
         }
 
         window.addEventListener('message', (event) => {
