@@ -16,114 +16,120 @@
       --warning: #f59e0b;
     }
     * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
+    html, body { 
+      width: 100%;
+      height: 520px;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
     body {
-      min-height: 100%;
       font-family: 'Segoe UI', Arial, sans-serif;
       background: radial-gradient(circle at top, #1e3a8a, var(--bg) 70%);
       color: var(--text);
       display: flex;
       justify-content: center;
       align-items: stretch;
-      padding: clamp(8px, 1.6vw, 14px);
-      overflow: hidden;
+      padding: 8px;
     }
     .shell {
-      width: min(100%, 860px);
+      width: 100%;
       height: 100%;
+      max-height: 520px;
       display: grid;
-      gap: 10px;
+      gap: 6px;
       grid-template-rows: auto auto minmax(0, 1fr) auto;
       min-height: 0;
     }
     .panel {
       background: var(--panel);
       border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 16px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.24);
-      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.24);
+      padding: 8px 12px;
       min-height: 0;
     }
     .topbar {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 10px;
+      gap: 6px;
       align-items: center;
     }
-    .topbar h1 { margin: 0; font-size: 1.2rem; }
-    .topbar .tag { color: var(--accent); font-weight: 700; }
+    .topbar h1 { margin: 0; font-size: 1.1rem; }
+    .topbar .tag { color: var(--accent); font-weight: 700; font-size: 0.85rem; }
     .stats {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
     }
     .pill {
-      padding: 7px 10px;
+      padding: 4px 8px;
       border-radius: 999px;
       background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.14);
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       color: var(--text);
     }
     .screen {
       background: linear-gradient(180deg, #f7fbff 0%, #d8ecff 100%);
-      border-radius: 14px;
+      border-radius: 12px;
       height: 100%;
-      min-height: 240px;
+      min-height: 150px;
       display: grid;
       place-items: center;
-      padding: 10px;
+      padding: 6px;
       position: relative;
       overflow: hidden;
     }
     canvas {
       width: 100%;
       height: 100%;
-      min-height: 220px;
+      min-height: 140px;
       display: block;
-      border-radius: 12px;
+      border-radius: 10px;
       background: transparent;
     }
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
     }
     button {
       border: 0;
       border-radius: 999px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       font-weight: 700;
       cursor: pointer;
       color: #03111f;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
+      font-size: 0.85rem;
     }
     button.secondary { background: rgba(255,255,255,0.14); color: var(--text); }
-    button.small { padding: 7px 10px; font-size: 0.9rem; }
-    .muted { color: var(--muted); }
+    button.small { padding: 6px 8px; font-size: 0.8rem; }
+    .muted { color: var(--muted); font-size: 0.82rem; }
     .mini-card {
       display: none;
-      margin-top: 10px;
-      padding: 12px;
-      border-radius: 14px;
-      background: rgba(3, 10, 24, 0.78);
+      margin-top: 6px;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(3, 10, 24, 0.9);
       border: 1px solid rgba(255,255,255,0.12);
     }
     .mini-card.active { display: block; }
     .mini-header-row {
       display: flex;
       justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 6px;
+      margin-bottom: 4px;
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 0.82rem;
     }
     .mini-arena {
       position: relative;
-      min-height: 170px;
-      border-radius: 12px;
-      padding: 10px;
+      min-height: 115px;
+      border-radius: 8px;
+      padding: 6px;
       background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
       border: 1px solid rgba(255,255,255,0.15);
       overflow: hidden;
@@ -131,32 +137,24 @@
     .play-area {
       position: relative;
       width: 100%;
-      height: 128px;
-      border-radius: 10px;
+      height: 75px;
+      border-radius: 6px;
       background: rgba(255,255,255,0.07);
     }
     .mini-target {
       position: absolute;
       border: none;
       transform: translate(-50%, -50%);
-      font-size: 1.35rem;
+      font-size: 1.1rem;
       cursor: pointer;
       border-radius: 999px;
-      padding: 8px 10px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.16);
+      padding: 5px 7px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.16);
     }
     .mini-target.feed { background: #fde68a; color: #92400e; }
     .mini-target.rest { background: #c7d2fe; color: #312e81; }
     .mini-target.train { background: #fda4af; color: #9f1239; }
     .mini-target.clean { background: #bbf7d0; color: #14532d; }
-    @media (max-width: 700px) {
-      body { padding: 8px; }
-      .topbar { flex-direction: column; align-items: flex-start; }
-      .stats { gap: 6px; }
-      .pill { font-size: 0.82rem; }
-      .actions { gap: 6px; }
-      button { padding: 8px 11px; }
-    }
   </style>
 </head>
 <body>
@@ -209,7 +207,7 @@
           <div id="miniPlayArea" class="play-area"></div>
         </div>
       </div>
-      <p id="statusText" class="muted" style="margin:10px 0 0;">Your Bytebimon is waiting to be welcomed.</p>
+      <p id="statusText" class="muted" style="margin:6px 0 0;">Your Bytebimon is waiting to be welcomed.</p>
     </div>
   </div>
 
@@ -336,21 +334,21 @@
 
       ctx.fillStyle = '#0f172a';
       ctx.textAlign = 'center';
-      ctx.font = 'bold 24px Segoe UI';
-      ctx.fillText('Byte.exe', width / 2, 36);
+      ctx.font = 'bold 20px Segoe UI';
+      ctx.fillText('Byte.exe', width / 2, 28);
 
       if (pet.sprite) {
-        const scale = Math.min(width, height) / 18;
+        const scale = Math.min(width, height) / 20;
         const spriteX = width / 2 - 12 * scale;
         const spriteY = height / 2 - 8 * scale + bob;
         drawSprite(pet.sprite, spriteX, spriteY, scale);
       } else {
-        ctx.font = '18px Segoe UI';
+        ctx.font = '15px Segoe UI';
         ctx.fillText('Your Bytebimon is hatching...', width / 2, height / 2);
       }
 
-      ctx.font = '15px Segoe UI';
-      ctx.fillText(`${pet.name} • ${pet.stage}`, width / 2, height - 26);
+      ctx.font = '13px Segoe UI';
+      ctx.fillText(`${pet.name} • ${pet.stage}`, width / 2, height - 16);
     }
 
     function updateStats() {
@@ -367,7 +365,7 @@
     }
 
     function loop() {
-      bob = Math.sin(Date.now() / 300) * 5;
+      bob = Math.sin(Date.now() / 300) * 4;
       drawScene();
       requestAnimationFrame(loop);
     }
@@ -484,10 +482,10 @@
       miniGameCard.classList.add('active');
 
       const labels = {
-        feed: { title: 'Snack Dash', hint: 'Catch 5 treats before the timer runs out.' },
-        rest: { title: 'Moon Reset', hint: 'Tap the moon 5 times to calm your pet.' },
-        train: { title: 'Target Drill', hint: 'Hit the target 5 times to train your pet.' },
-        clean: { title: 'Sparkle Sweep', hint: 'Remove 5 dirt spots to clean your pet.' }
+        feed: { title: 'Snack Dash', hint: 'Catch 5 treats before time runs out.' },
+        rest: { title: 'Moon Reset', hint: 'Tap the moon 5 times to calm pet.' },
+        train: { title: 'Target Drill', hint: 'Hit the target 5 times.' },
+        clean: { title: 'Sparkle Sweep', hint: 'Remove 5 dirt spots.' }
       };
 
       const current = labels[type];
