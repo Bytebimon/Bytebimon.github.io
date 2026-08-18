@@ -16,120 +16,114 @@
       --warning: #f59e0b;
     }
     * { box-sizing: border-box; }
-    html, body { 
-      width: 100%;
-      height: 520px;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
+    html, body { height: 100%; margin: 0; }
     body {
+      min-height: 100%;
       font-family: 'Segoe UI', Arial, sans-serif;
       background: radial-gradient(circle at top, #1e3a8a, var(--bg) 70%);
       color: var(--text);
       display: flex;
       justify-content: center;
       align-items: stretch;
-      padding: 8px;
+      padding: clamp(8px, 1.6vw, 14px);
+      overflow: hidden;
     }
     .shell {
-      width: 100%;
+      width: min(100%, 860px);
       height: 100%;
-      max-height: 520px;
       display: grid;
-      gap: 6px;
+      gap: 10px;
       grid-template-rows: auto auto minmax(0, 1fr) auto;
       min-height: 0;
     }
     .panel {
       background: var(--panel);
       border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.24);
-      padding: 8px 12px;
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.24);
+      padding: 12px;
       min-height: 0;
     }
     .topbar {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 6px;
+      gap: 10px;
       align-items: center;
     }
-    .topbar h1 { margin: 0; font-size: 1.1rem; }
-    .topbar .tag { color: var(--accent); font-weight: 700; font-size: 0.85rem; }
+    .topbar h1 { margin: 0; font-size: 1.2rem; }
+    .topbar .tag { color: var(--accent); font-weight: 700; }
     .stats {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 8px;
     }
     .pill {
-      padding: 4px 8px;
+      padding: 7px 10px;
       border-radius: 999px;
       background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.14);
-      font-size: 0.82rem;
+      font-size: 0.9rem;
       color: var(--text);
     }
     .screen {
       background: linear-gradient(180deg, #f7fbff 0%, #d8ecff 100%);
-      border-radius: 12px;
+      border-radius: 14px;
       height: 100%;
-      min-height: 150px;
+      min-height: 240px;
       display: grid;
       place-items: center;
-      padding: 6px;
+      padding: 10px;
       position: relative;
       overflow: hidden;
     }
     canvas {
       width: 100%;
       height: 100%;
-      min-height: 140px;
+      min-height: 220px;
       display: block;
-      border-radius: 10px;
+      border-radius: 12px;
       background: transparent;
     }
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 8px;
     }
     button {
       border: 0;
       border-radius: 999px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       font-weight: 700;
       cursor: pointer;
       color: #03111f;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
-      font-size: 0.85rem;
     }
     button.secondary { background: rgba(255,255,255,0.14); color: var(--text); }
-    button.small { padding: 6px 8px; font-size: 0.8rem; }
-    .muted { color: var(--muted); font-size: 0.82rem; }
+    button.small { padding: 7px 10px; font-size: 0.9rem; }
+    .muted { color: var(--muted); }
     .mini-card {
       display: none;
-      margin-top: 6px;
-      padding: 8px;
-      border-radius: 10px;
-      background: rgba(3, 10, 24, 0.9);
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(3, 10, 24, 0.78);
       border: 1px solid rgba(255,255,255,0.12);
     }
     .mini-card.active { display: block; }
     .mini-header-row {
       display: flex;
       justify-content: space-between;
-      gap: 6px;
-      margin-bottom: 4px;
+      gap: 8px;
+      margin-bottom: 8px;
       color: var(--text);
-      font-size: 0.82rem;
+      font-size: 0.95rem;
     }
     .mini-arena {
       position: relative;
-      min-height: 115px;
-      border-radius: 8px;
-      padding: 6px;
+      min-height: 170px;
+      border-radius: 12px;
+      padding: 10px;
       background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
       border: 1px solid rgba(255,255,255,0.15);
       overflow: hidden;
@@ -137,24 +131,32 @@
     .play-area {
       position: relative;
       width: 100%;
-      height: 75px;
-      border-radius: 6px;
+      height: 128px;
+      border-radius: 10px;
       background: rgba(255,255,255,0.07);
     }
     .mini-target {
       position: absolute;
       border: none;
       transform: translate(-50%, -50%);
-      font-size: 1.1rem;
+      font-size: 1.35rem;
       cursor: pointer;
       border-radius: 999px;
-      padding: 5px 7px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.16);
+      padding: 8px 10px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.16);
     }
     .mini-target.feed { background: #fde68a; color: #92400e; }
     .mini-target.rest { background: #c7d2fe; color: #312e81; }
     .mini-target.train { background: #fda4af; color: #9f1239; }
     .mini-target.clean { background: #bbf7d0; color: #14532d; }
+    @media (max-width: 700px) {
+      body { padding: 8px; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .stats { gap: 6px; }
+      .pill { font-size: 0.82rem; }
+      .actions { gap: 6px; }
+      button { padding: 8px 11px; }
+    }
   </style>
 </head>
 <body>
@@ -192,6 +194,7 @@
         <button onclick="startMiniGame('rest')">Rest</button>
         <button onclick="startMiniGame('train')">Train</button>
         <button onclick="startMiniGame('clean')">Clean</button>
+        <button class="secondary" onclick="save()">Save</button>
         <button class="secondary" onclick="resetPet()">Reset</button>
       </div>
       <div id="miniGameCard" class="mini-card">
@@ -207,7 +210,7 @@
           <div id="miniPlayArea" class="play-area"></div>
         </div>
       </div>
-      <p id="statusText" class="muted" style="margin:6px 0 0;">Your Bytebimon is waiting to be welcomed.</p>
+      <p id="statusText" class="muted" style="margin:10px 0 0;">Your Bytebimon is waiting to be welcomed.</p>
     </div>
   </div>
 
@@ -334,21 +337,60 @@
 
       ctx.fillStyle = '#0f172a';
       ctx.textAlign = 'center';
-      ctx.font = 'bold 20px Segoe UI';
-      ctx.fillText('Byte.exe', width / 2, 28);
+      ctx.font = 'bold 24px Segoe UI';
+      ctx.fillText('Byte.exe', width / 2, 36);
 
       if (pet.sprite) {
-        const scale = Math.min(width, height) / 20;
+        const scale = Math.min(width, height) / 18;
         const spriteX = width / 2 - 12 * scale;
         const spriteY = height / 2 - 8 * scale + bob;
         drawSprite(pet.sprite, spriteX, spriteY, scale);
       } else {
-        ctx.font = '15px Segoe UI';
+        ctx.font = '18px Segoe UI';
         ctx.fillText('Your Bytebimon is hatching...', width / 2, height / 2);
       }
 
-      ctx.font = '13px Segoe UI';
-      ctx.fillText(`${pet.name} • ${pet.stage}`, width / 2, height - 16);
+      ctx.font = '15px Segoe UI';
+      ctx.fillText(`${pet.name} • ${pet.stage}`, width / 2, height - 26);
+    }
+
+    function load() {
+      const savedData = localStorage.getItem('bytebimonGameData');
+      if (savedData) {
+        const gameData = JSON.parse(savedData);
+        pet.name = gameData.name !== undefined ? gameData.name : 'Bytebimon';
+        pet.hunger = gameData.hunger !== undefined ? gameData.hunger : 20;
+        pet.health = gameData.health !== undefined ? gameData.health : 10;
+        pet.mood = gameData.mood !== undefined ? gameData.mood : 78;
+        pet.energy = gameData.energy !== undefined ? gameData.energy : 90;
+        pet.age = gameData.age !== undefined ? gameData.age : 0;
+        pet.cleanliness = gameData.cleanliness !== undefined ? gameData.cleanliness : 100;
+        pet.stage = gameData.stage || 'egg';
+        pet.attack = gameData.attack || 0;
+        pet.defense = gameData.defense || 0;
+        pet.sprite = gameData.sprite || null;
+        console.log("Game loaded.");
+        return true;
+      }
+      return false;
+    }
+
+    function save() {
+      const gameData = {
+        name: pet.name,
+        hunger: pet.hunger,
+        health: pet.health,
+        mood: pet.mood,
+        energy: pet.energy,
+        age: pet.age,
+        cleanliness: pet.cleanliness,
+        stage: pet.stage,
+        attack: pet.attack,
+        defense: pet.defense,
+        sprite: pet.sprite
+      };
+      localStorage.setItem('bytebimonGameData', JSON.stringify(gameData));
+      console.log("Game saved.");
     }
 
     function updateStats() {
@@ -365,7 +407,7 @@
     }
 
     function loop() {
-      bob = Math.sin(Date.now() / 300) * 4;
+      bob = Math.sin(Date.now() / 300) * 5;
       drawScene();
       requestAnimationFrame(loop);
     }
@@ -385,6 +427,7 @@
         updateStatus('Your Bytebimon fainted. Reset to start a new life.');
         clearInterval(timer);
         timer = null;
+        save();
         return;
       }
 
@@ -421,6 +464,7 @@
       };
       pickSprite();
       updateStats();
+      save();
       updateStatus('A fresh Bytebimon has arrived.');
     }
 
@@ -445,6 +489,7 @@
       clearMiniGame();
       updateStatus(message);
       updateStats();
+      save();
     }
 
     function applyActionReward(type) {
@@ -482,10 +527,10 @@
       miniGameCard.classList.add('active');
 
       const labels = {
-        feed: { title: 'Snack Dash', hint: 'Catch 5 treats before time runs out.' },
-        rest: { title: 'Moon Reset', hint: 'Tap the moon 5 times to calm pet.' },
-        train: { title: 'Target Drill', hint: 'Hit the target 5 times.' },
-        clean: { title: 'Sparkle Sweep', hint: 'Remove 5 dirt spots.' }
+        feed: { title: 'Snack Dash', hint: 'Catch 5 treats before the timer runs out.' },
+        rest: { title: 'Moon Reset', hint: 'Tap the moon 5 times to calm your pet.' },
+        train: { title: 'Target Drill', hint: 'Hit the target 5 times to train your pet.' },
+        clean: { title: 'Sparkle Sweep', hint: 'Remove 5 dirt spots to clean your pet.' }
       };
 
       const current = labels[type];
@@ -594,7 +639,10 @@
       }
     }
 
-    pickSprite();
+    if (!load() || !pet.sprite) {
+      pickSprite();
+      save();
+    }
     updateStats();
     startLoop();
     loop();
